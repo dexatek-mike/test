@@ -3,22 +3,19 @@ version: 2.1
 parameters:
   project-root:
     type: string
-    default: "~/home/dev/app-project/sdk-ameba-v4.0d_gcc"
-  project-build:
+    default: "~/home/dev/app-project"
+  project-subdir-build:
     type: string
-    default: "~/home/dev/app-project/sdk-ameba-v4.0d_gcc/project/realtek_ameba1_va0_example/GCC-RELEASE"
-  project-bin:
+    default: "sdk-ameba-v4.0d_gcc/project/realtek_ameba1_va0_example/GCC-RELEASE"
+  project-subdir-bin:
     type: string
-    default: "~/home/dev/app-project/sdk-ameba-v4.0d_gcc/project/realtek_ameba1_va0_example/GCC-RELEASE/application/Debug/bin"
+    default: "sdk-ameba-v4.0d_gcc/project/realtek_ameba1_va0_example/GCC-RELEASE/application/Debug/bin"
   artifact-out:
     type: string
     default: "~/home/dev/out"
   gen-flash-home:
     type: string
     default: "/c/Users/circleci"
-  gen-flash-root:
-    type: string
-    default: "/c/Users/circleci/gen_flash"
   gen-flash-repo:
     type: string
     default: "https://github.com/dexatek-mike/ci-win.git"
@@ -28,6 +25,9 @@ parameters:
   config-native-build:
     type: boolean
     default: true
+  config-fake-build:
+    type: boolean
+    default: false
 
 orbs:
   win: circleci/windows@1.0.0
@@ -36,11 +36,11 @@ jobs:
   build:
     docker:
       - image: yalee104/dk-ameba1:1.1
-    working_directory: ~/home/dev/app-project/
     environment:
       PATH_PROJECT_ROOT: << pipeline.parameters.project-root >>
-      PATH_PROJECT_BUILD: << pipeline.parameters.project-build >>
-      PATH_PROJECT_BIN: << pipeline.parameters.project-bin >>
+      DIR_BUILD: << pipeline.parameters.project-subdir-build >>
+      DIR_BIN: << pipeline.parameters.project-subdir-bin >>
+      DIR_RELEASE: sdk-ameba-v4.0d_gcc/release
     parameters:
       out-dir:
         type: string
@@ -51,7 +51,12 @@ jobs:
       release-build:
         type: boolean
         default: false
+    working_directory: << pipeline.parameters.project-root >>
     steps:
+      - when:
+          condition: << pipeline.parameters.config-fake-build >>
+          steps:
+            - run: echo 'export FAKE_BUILD=y' >> $BASH_ENV
       - when:
           condition: << pipeline.parameters.config-native-build >>
           steps:
@@ -71,30 +76,41 @@ jobs:
       - checkout
       - run:
           name: Make (build project)
-          #Set the directory to build the project
-          working_directory: << pipeline.parameters.project-build >>
-          #make to build the project
           command: |
-            echo "NATIVE_BUILD=${NATIVE_BUILD}, RELEASE_BUILD=${RELEASE_BUILD}, BUILD_MP_TOOL=${BUILD_MP_TOOL}"
-            make > build.log 2>&1
-            mkdir << parameters.out-dir >>
-            cp build.log << parameters.out-dir >>/
-            cp application/Debug/bin/* -r << parameters.out-dir >>/
-#            find ${PATH_PROJECT_ROOT}/release -name "A000.dat" | xargs -i cp {} ${PATH_PROJECT_BUILD}/<< parameters.out-dir >>
-#            find ${PATH_PROJECT_ROOT}/release -type d -name "BLE*" | xargs -i cp {} ${PATH_PROJECT_BUILD}/<< parameters.out-dir >>
+            out_dir=<< parameters.out-dir >>
+
+            pushd ${DIR_BUILD}
+            # make; generate fake files to speed up tests if FAKE_BUILD is defined
+            if [ "${FAKE_BUILD}" == 'y' ] ; then
+              echo "fake build" > build.log
+              mkdir -p ${DIR_BIN}
+              echo "fake build" > ${DIR_BIN}/ota.bin
+              echo "fake build" > ${DIR_BIN}/ram_all.bin
+            else
+              make > build.log 2>&1
+            fi
+            popd
+
+            mkdir ${out_dir}
+            cp ${DIR_BUILD}/build.log .
+            cp ${DIR_BUILD}/build.log ${out_dir}/
+            cp ${DIR_RELEASE}/* -r ${out_dir}/
+            find ${DIR_RELEASE} -name "A000.dat" | xargs -i cp {} ${out_dir}
+            cp ${DIR_BIN}/* -r ${out_dir}/
       - store_artifacts:
-          path: << pipeline.parameters.project-build >>/build.log
+          path: << pipeline.parameters.project-root >>/build.log
           destination: << pipeline.parameters.artifact-out >>/build.log
+          when: on_fail
       - run:
           name: build failed
           command: circleci-agent step halt
           when: on_fail
       - persist_to_workspace:
-          root: << pipeline.parameters.project-build >>
+          root: << pipeline.parameters.project-root >>
           paths:
             - << parameters.out-dir >>
       - store_artifacts:
-          path: << pipeline.parameters.project-bin >>
+          path: << pipeline.parameters.project-root >>/<< parameters.out-dir >>/
           destination: << pipeline.parameters.artifact-out >>/bin
   gen_flash_bin:
     executor:
@@ -103,7 +119,6 @@ jobs:
     environment:
       PATH_HOME: << pipeline.parameters.gen-flash-home >>
       PATH_PROJECT_REPO: << pipeline.parameters.gen-flash-repo >>
-      PATH_PROJECT_ROOT: << pipeline.parameters.gen-flash-root >>
     working_directory: ~
     steps:
       - unless:
@@ -116,27 +131,26 @@ jobs:
           name: generate flah.bin
           working_directory: ~
           command: |
-            repo_dir=`basename ${PATH_PROJECT_ROOT}`
+            repo_dir="gen_flash"
             share_dir=~/temp
 
             cd ${PATH_HOME}
             git clone ${PATH_PROJECT_REPO} ${repo_dir}
-
-            cd ${PATH_PROJECT_ROOT}
+            cd ${repo_dir}
             mkdir -p flash_bin/normal flash_bin/release
 
             cp ${share_dir}/normal/* ./ -r
-            if [[ ${NO_MP_OTA} == 'y' ]] ; then
+            if [[ "${NO_MP_OTA}" == 'y' ]] ; then
+              echo "no mp-tool image; use ota.bin"
               cp ota.bin mp_ota.bin
             else
-              echo "no mp-tool image; use ota.bin"
               cp ${share_dir}/mp_tool/ota.bin mp_ota.bin
             fi
             sh gen_flash_bin.sh
             cp flash.bin flash_bin/normal/
 
             cp ${share_dir}/release/* ./ -r
-            if [[ ${NO_MP_OTA} == 'y' ]] ; then
+            if [[ "${NO_MP_OTA}" == 'y' ]] ; then
               cp ota.bin mp_ota.bin
             else
               echo "no mp-tool image; use ota.bin"

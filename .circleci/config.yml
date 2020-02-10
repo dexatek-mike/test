@@ -41,7 +41,7 @@ jobs:
   build:
     working_directory: << pipeline.parameters.project-root >>
     docker:
-      - image: yalee104/dk-ameba1:1.2
+      - image: dexatek/dk-ameba1:1.2
     environment:
       PATH_PROJECT_ROOT: << pipeline.parameters.project-root >>
       DIR_BUILD: << pipeline.parameters.subdir-project-build >>
@@ -87,6 +87,14 @@ jobs:
           name: Make (build project)
           command: |
             out_dir=<< parameters.out-dir >>
+
+            echo "------------"
+            ls -a ..
+            echo "------------"
+            ls -a ../..
+            echo "------------"
+            ls -a ../tools
+            echo "------------"
 
             # make; generate fake files to speed up tests if FAKE_BUILD is defined
             if [ "${FAKE_BUILD}" == 'y' ] ; then

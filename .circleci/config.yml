@@ -144,9 +144,12 @@ jobs:
       - run:
           name: generate flah.bin
           command: |
-            share_dir=`realpath temp`
+            share_dir=$(realpath temp)
 
-            echo "share_dir=$(share_dir)"
+            echo "share_dir=$(realpath ${share_dir})"
+            echo "--------"
+            ls -a ${share_dir}
+            echo "--------"
 
             cd ${PATH_HOME}
             git clone ${GIT_REPO} ${DIR_REPO}
@@ -222,3 +225,7 @@ workflows:
             - build_normal
             - build_release
             - build_mp_tool
+      - gen_flash_bin:
+          name: gen_release_package
+          requires:
+            - gen_flash_bin

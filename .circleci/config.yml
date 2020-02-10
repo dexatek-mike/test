@@ -1,22 +1,27 @@
 version: 2.1
-
 parameters:
   project-root:
     type: string
     default: "~/home/dev/app-project"
-  project-subdir-build:
+  subdir-project-build:
     type: string
     default: "sdk-ameba-v4.0d_gcc/project/realtek_ameba1_va0_example/GCC-RELEASE"
-  project-subdir-bin:
+  subdir-project-bin:
     type: string
     default: "sdk-ameba-v4.0d_gcc/project/realtek_ameba1_va0_example/GCC-RELEASE/application/Debug/bin"
   artifact-out:
     type: string
     default: "~/home/dev/out"
-  gen-flash-home:
+  gen-flash-root:
     type: string
     default: "/c/Users/circleci"
-  gen-flash-repo:
+  gen-flash-root-win:
+    type: string
+    default: "C:\\Users\\circleci\\gen_flash"
+  subdir-gen-flash-repo:
+    type: string
+    default: "gen_flash"
+  repo-gen-flash:
     type: string
     default: "https://github.com/dexatek-mike/ci-win.git"
   config-support-mp-tool:
@@ -34,13 +39,15 @@ orbs:
 
 jobs:
   build:
+    working_directory: << pipeline.parameters.project-root >>
     docker:
       - image: yalee104/dk-ameba1:1.1
     environment:
       PATH_PROJECT_ROOT: << pipeline.parameters.project-root >>
-      DIR_BUILD: << pipeline.parameters.project-subdir-build >>
-      DIR_BIN: << pipeline.parameters.project-subdir-bin >>
+      DIR_BUILD: << pipeline.parameters.subdir-project-build >>
+      DIR_BIN: << pipeline.parameters.subdir-project-bin >>
       DIR_RELEASE: sdk-ameba-v4.0d_gcc/release
+      DIR_DEFAULT_BIN: sdk-ameba-v4.0d_gcc/utils/default_bin
     parameters:
       out-dir:
         type: string
@@ -51,7 +58,6 @@ jobs:
       release-build:
         type: boolean
         default: false
-    working_directory: << pipeline.parameters.project-root >>
     steps:
       - when:
           condition: << pipeline.parameters.config-fake-build >>
@@ -79,17 +85,15 @@ jobs:
           command: |
             out_dir=<< parameters.out-dir >>
 
-            pushd ${DIR_BUILD}
             # make; generate fake files to speed up tests if FAKE_BUILD is defined
             if [ "${FAKE_BUILD}" == 'y' ] ; then
-              echo "fake build" > build.log
               mkdir -p ${DIR_BIN}
-              echo "fake build" > ${DIR_BIN}/ota.bin
-              echo "fake build" > ${DIR_BIN}/ram_all.bin
+              cp ${DIR_DEFAULT_BIN}/* -r ${DIR_BIN}/
             else
+              pushd ${DIR_BUILD}
               make > build.log 2>&1
+              popd
             fi
-            popd
 
             mkdir ${out_dir}
             cp ${DIR_BUILD}/build.log .
@@ -113,13 +117,14 @@ jobs:
           path: << pipeline.parameters.project-root >>/<< parameters.out-dir >>/
           destination: << pipeline.parameters.artifact-out >>/bin
   gen_flash_bin:
+    working_directory: << pipeline.parameters.gen-flash-root-win >>
     executor:
       name: win/vs2019
       shell: bash.exe
     environment:
-      PATH_HOME: << pipeline.parameters.gen-flash-home >>
-      PATH_PROJECT_REPO: << pipeline.parameters.gen-flash-repo >>
-    working_directory: ~
+      PATH_HOME: << pipeline.parameters.gen-flash-root >>
+      DIR_REPO: << pipeline.parameters.subdir-gen-flash-repo >>
+      GIT_REPO: << pipeline.parameters.repo-gen-flash >>
     steps:
       - unless:
           condition: << pipeline.parameters.config-support-mp-tool >>
@@ -129,14 +134,15 @@ jobs:
           at: ~/temp
       - run:
           name: generate flah.bin
-          working_directory: ~
           command: |
-            repo_dir="gen_flash"
+            pwd
+            ls -a .
+            echo "realpath .=$(realpath .)"
             share_dir=~/temp
 
             cd ${PATH_HOME}
-            git clone ${PATH_PROJECT_REPO} ${repo_dir}
-            cd ${repo_dir}
+            git clone ${GIT_REPO} ${DIR_REPO}
+            cd ${DIR_REPO}
             mkdir -p flash_bin/normal flash_bin/release
 
             cp ${share_dir}/normal/* ./ -r
@@ -163,11 +169,11 @@ jobs:
           command: circleci-agent step halt
           when: on_fail
       - persist_to_workspace:
-          root: C:\Users\circleci\gen_flash
+          root: << pipeline.parameters.gen-flash-root-win >>\<< pipeline.parameters.subdir-gen-flash-repo >>
           paths:
             - flash_bin
       - store_artifacts:
-          path: C:\Users\circleci\gen_flash\flash_bin
+          path: << pipeline.parameters.gen-flash-root-win >>\<< pipeline.parameters.subdir-gen-flash-repo >>\flash_bin
           destination: << pipeline.parameters.artifact-out >>/flash_bin
 workflows:
   version: 2.1

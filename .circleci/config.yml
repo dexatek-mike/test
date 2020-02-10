@@ -3,7 +3,7 @@ parameters:
   project-root:
     type: string
     default: "/home/dev/app-project"
-  project-tools:
+  common-tools:
     type: string
     default: "/home/dev/tools"
   artifact-out:
@@ -21,6 +21,9 @@ parameters:
   repo-gen-flash:
     type: string
     default: "https://github.com/dexatek-mike/ci-win.git"
+  gen-package-root:
+    type: string
+    default: "/home/dev/gen_package"
   config-support-mp-tool:
     type: boolean
     default: false
@@ -30,8 +33,6 @@ parameters:
   config-fake-build:
     type: boolean
     default: true
-environment:
-  PATH_TOOLS: << pipeline.parameters.project-tools >>
 
 orbs:
   win: circleci/windows@1.0.0
@@ -123,6 +124,17 @@ jobs:
       - store_artifacts:
           path: << pipeline.parameters.project-root >>/<< parameters.out-dir >>/
           destination: << pipeline.parameters.artifact-out >>/bin
+  gen_release_package:
+    working_directory: << pipeline.parameters.gen-package-root >>
+    docker:
+      - image: dexatek/dk-ameba1:1.2
+    environment:
+      PATH_GEN_PACKAGE_ROOT: << pipeline.parameters.gen-package-root >>
+      PATH_TOOLS: << pipeline.parameters.common-tools >>
+    parameters:
+    steps:
+      - attach_workspace:
+          at: temp
   gen_flash_bin:
     working_directory: << pipeline.parameters.gen-flash-root-win >>
     executor:
@@ -138,14 +150,16 @@ jobs:
           steps:
             - run: echo 'NO_MP_OTA=y' >> $BASH_ENV
       - attach_workspace:
-          at: ~/temp
+          at: temp
       - run:
           name: generate flah.bin
           command: |
             pwd
             ls -a .
             echo "realpath .=$(realpath .)"
-            share_dir=~/temp
+            share_dir=`realpath $(temp)`
+
+            echo "share_dir=$(share_dir)"
 
             cd ${PATH_HOME}
             git clone ${GIT_REPO} ${DIR_REPO}

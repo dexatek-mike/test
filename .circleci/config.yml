@@ -100,11 +100,12 @@ jobs:
             echo "----------"
             echo "commit_tag=${commit_tag}"
             echo "----------"
-#project_name_with_ver="$project_name-$odm_name-$release_version-$commit_hash"
-#path_release=$root_path/release/$project_name_with_ver
-#path_bin_formal=$path_release/$soc_name/Internal_FW_Package/Formal_Release
-#path_bin_internal=$path_release/$soc_name/Internal_FW_Package/Internal_Release
-#file_dest_zip=$root_path/release/$project_name_with_ver.zip
+
+            #project_name_with_ver="$project_name-$odm_name-$release_version-$commit_hash"
+            #path_release=$root_path/release/$project_name_with_ver
+            #path_bin_formal=$path_release/$soc_name/Internal_FW_Package/Formal_Release
+            #path_bin_internal=$path_release/$soc_name/Internal_FW_Package/Internal_Release
+            #file_dest_zip=$root_path/release/$project_name_with_ver.zip
 
             # generate fake files to speed up tests if FAKE_BUILD is defined
             if [ "${FAKE_BUILD}" == 'y' ] ; then

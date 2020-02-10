@@ -95,8 +95,6 @@ jobs:
             echo "MY_COMMIT_TAG=$(git tag -l --points-at HEAD | egrep -o 'v[0-9]+(\.[0-9]+).*')" >> commit_info.env
             echo "MY_PROJECT_NAME=$(ls ${build_dir}/../ | grep "EWARM" | sed 's:/.*::')" >> commit_info.env
 
-            #project_name_with_ver="$project_name-$odm_name-$release_version-$commit_hash"
-
             # generate fake files to speed up tests if FAKE_BUILD is defined
             if [ "${FAKE_BUILD}" == 'y' ] ; then
               mkdir -p ${bin_dir}
@@ -109,11 +107,11 @@ jobs:
             fi
 
             # prepare artifacts for the next stage
-            mkdir ${out_dir}
+            mkdir -p ${out_dir}/package
             cp ${build_dir}/build.log ${PATH_PROJECT_ROOT}/
             cp ${build_dir}/build.log ${out_dir}/
             cp ${PATH_PROJECT_ROOT}/commit_info.env ${out_dir}/
-            cp ${release_dir}/* -r ${out_dir}/
+            cp ${release_dir}/* -r ${out_dir}/package
             find ${release_dir} -name "A000.dat" | xargs -i cp {} ${out_dir}
             cp ${bin_dir}/* -r ${out_dir}/
       - store_artifacts:
@@ -199,14 +197,59 @@ jobs:
         type: string
         default: SigmaCasa
     steps:
+      - unless:
+          condition: << pipeline.parameters.config-support-mp-tool >>
+          steps:
+            - run: echo 'export NO_MP_OTA=y' >> $BASH_ENV
       - attach_workspace:
           at: temp
       - run:
           name: generate release package
           command: |
+
             echo "-------------"
-            ls -a temp
+            echo "MY_COMMIT_HASH=${MY_COMMIT_HASH}"
+            echo "MY_COMMIT_TAG=${MY_COMMIT_TAG}"
+            echo "MY_PROJECT_NAME=${MY_PROJECT_NAME}"
             echo "-------------"
+
+            share_dir=$(realpath ./temp)
+            odm_name=<< parameters.odm-name >>
+            source ${share_dir}/normal/commit_info.env
+            production_image="PRODUCTION-${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}.bin"
+            ota_image="OTA-${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}.bin"
+            mp_ota_image="MP_OTA-${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}.bin"
+            ram_all_image="RAM_ALL-${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}.bin"
+            formal_package="${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}"
+            debug_package="${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}-debug"
+
+            mv ${share_dir}/normal/package ${debug_package}
+            path_intenal=$(find ${debug_package} -type d -iname "Formal_Release")
+            path_external=$(find ${debug_package} -type d -iname "Internal_Release")
+            path_soc=$(find ${debug_package} -type d -iname "RTK*")
+            mv ${share_dir}/flash_bin/normal/flash.bin ${path_soc}/${production_image}
+            mv ${share_dir}/normal/ota.bin ${path_external}/${ota_image}
+            mv ${share_dir}/normal/ram_all.bin ${path_intenal}/${ram_all_image}
+            if [[ ${NO_MP_OTA} != 'y' ]] ; then
+              cp ${share_dir}/mp_tool/bin/ota.bin ${path_intenal}/${mp_ota_image_name}
+            fi
+
+            mv ${share_dir}/release/package ${formal_package}
+            path_intenal=$(find ${formal_package} -type d -iname "Formal_Release")
+            path_external=$(find ${formal_package} -type d -iname "Internal_Release")
+            path_soc=$(find ${formal_package} -type d -iname "RTK*")
+            mv ${share_dir}/flash_bin/normal/flash.bin ${path_soc}/${production_image}
+            mv ${share_dir}/normal/ota.bin ${path_external}/${ota_image}
+            mv ${share_dir}/normal/ram_all.bin ${path_intenal}/${ram_all_image}
+            if [[ ${NO_MP_OTA} != 'y' ]] ; then
+              cp ${share_dir}/mp_tool/bin/ota.bin ${path_intenal}/${mp_ota_image_name}
+            fi
+
+            mkdir out
+            mv ${debug_package} ${formal_package} out/
+      - store_artifacts:
+          path: << pipeline.parameters.gen-package-root >>/out
+          destination: << pipeline.parameters.artifact-out >>/out
 
 workflows:
   version: 2.1

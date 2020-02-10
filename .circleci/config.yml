@@ -3,6 +3,9 @@ parameters:
   project-root:
     type: string
     default: "/home/dev/app-project"
+  project-tools:
+    type: string
+    default: "/home/dev/tools"
   artifact-out:
     type: string
     default: "~/home/dev/out"
@@ -27,6 +30,8 @@ parameters:
   config-fake-build:
     type: boolean
     default: true
+environment:
+  PATH_TOOLS: << pipeline.parameters.project-tools >>
 
 orbs:
   win: circleci/windows@1.0.0
@@ -83,11 +88,7 @@ jobs:
             default_bin_dir=${PATH_PROJECT_ROOT}/sdk-ameba-v4.0d_gcc/utils/default_bin
 
             echo "------------"
-            ls -a ../..
-            echo "------------"
-            ls -a ../../..
-            echo "------------"
-            ls -a ../../dev
+            ls -a $(PATH_TOOLS)
             echo "------------"
 
             # make; generate fake files to speed up tests if FAKE_BUILD is defined

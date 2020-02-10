@@ -80,8 +80,9 @@ jobs:
                 unless: << pipeline.parameters.config-support-mp-tool >>
             - run: echo 'export BUILD_MP_TOOL=y' >> $BASH_ENV
       - checkout
-      - setup_remote_docker: 
-          docker_layer_caching: true
+# need premium plan
+#      - setup_remote_docker: 
+#          docker_layer_caching: true
       - run:
           name: Make (build project)
           command: |

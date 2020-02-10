@@ -82,17 +82,31 @@ jobs:
       - run:
           name: Make (build project)
           command: |
+
+            # set path variables
             out_dir=${PATH_PROJECT_ROOT}/<< parameters.out-dir >>
             build_dir=${PATH_PROJECT_ROOT}/sdk-ameba-v4.0d_gcc/project/realtek_ameba1_va0_example/GCC-RELEASE
             bin_dir=${build_dir}/application/Debug/bin
             release_dir=${PATH_PROJECT_ROOT}/sdk-ameba-v4.0d_gcc/release
             default_bin_dir=${PATH_PROJECT_ROOT}/sdk-ameba-v4.0d_gcc/utils/default_bin
 
-            echo "------------"
-            ls -a $(PATH_TOOLS)
-            echo "------------"
+            # save the current commit info
+            commit_hash=$(git rev-parse HEAD | cut -c 1-8)
+            commit_tag=$(git tag -l --points-at HEAD)
+            echo "----------"
+            echo "commit_tag=${commit_tag}"
+            echo "----------"
+            echo "commit_hash=${commit_hash}"
+            echo "----------"
+            echo "commit_tag=${commit_tag}"
+            echo "----------"
+#project_name_with_ver="$project_name-$odm_name-$release_version-$commit_hash"
+#path_release=$root_path/release/$project_name_with_ver
+#path_bin_formal=$path_release/$soc_name/Internal_FW_Package/Formal_Release
+#path_bin_internal=$path_release/$soc_name/Internal_FW_Package/Internal_Release
+#file_dest_zip=$root_path/release/$project_name_with_ver.zip
 
-            # make; generate fake files to speed up tests if FAKE_BUILD is defined
+            # generate fake files to speed up tests if FAKE_BUILD is defined
             if [ "${FAKE_BUILD}" == 'y' ] ; then
               mkdir -p ${bin_dir}
               echo "fake build" > ${build_dir}/build.log
@@ -103,6 +117,7 @@ jobs:
               popd
             fi
 
+            # prepare artifacts for the next stage
             mkdir ${out_dir}
             cp ${build_dir}/build.log ${PATH_PROJECT_ROOT}/
             cp ${build_dir}/build.log ${out_dir}/
@@ -199,10 +214,14 @@ jobs:
       - run:
           name: generate release package
           command: |
-            pwd
+            echo "-------------"
+            ls -a temp
+            echo "-------------"
+
 workflows:
   version: 2.1
-  build_and_pack:
+  informal_release:
+  formal_release:
     jobs:
       - build:
           name: build_normal
@@ -214,18 +233,24 @@ workflows:
           out-dir: release
           build-mp-tool: false
           release-build: true
+          filters:
+            tags:
+              only: /^v[0-9]\.[0-99]\.[0-999]/
       - build:
           name: build_mp_tool
           out-dir: mp_tool
           build-mp-tool: true
           release-build: true
+          filters:
+            tags:
+              only: /^v[0-9]\.[0-99]\.[0-999]/
       - gen_flash_bin:
           name: gen_flash
           requires:
             - build_normal
             - build_release
             - build_mp_tool
-      - gen_flash_bin:
-          name: gen_release_package
+      - gen_release_package:
+          name: gen_package
           requires:
             - gen_flash_bin

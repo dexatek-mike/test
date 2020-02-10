@@ -253,7 +253,7 @@ jobs:
             #mv ${debug_package}.zip ${formal_package}.zip out/
 
       - store_artifacts:
-          path: << pipeline.parameters.gen-package-root >>/out/*
+          path: << pipeline.parameters.gen-package-root >>/out
           destination: << pipeline.parameters.artifact-out >>
 
 workflows:

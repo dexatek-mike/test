@@ -17,7 +17,7 @@ parameters:
     default: "/c/Users/circleci"
   gen-flash-root-win:
     type: string
-    default: "C:\\Users\\circleci\\gen_flash"
+    default: "C:\\Users\\circleci"
   subdir-gen-flash-repo:
     type: string
     default: "gen_flash"

@@ -242,15 +242,15 @@ jobs:
               cp ${share_dir}/mp_tool/bin/ota.bin ${path_intenal}/${mp_ota_image_name}
             fi
 
-            #tar zcvf ${debug_package}.tar.gz ${debug_package}
-            #tar zcvf ${formal_package}.tar.gz ${formal_package}
-            #mkdir out
-            #mv ${debug_package}.tar.gz ${formal_package}.tar.gz out/
-
-            zip -9 ${debug_package}.zip ${debug_package}
-            zip -9 ${formal_package}.zip ${formal_package}
+            tar zcvf ${debug_package}.tar.gz ${debug_package}
+            tar zcvf ${formal_package}.tar.gz ${formal_package}
             mkdir out
-            mv ${debug_package}.zip ${formal_package}.zip out/
+            mv ${debug_package}.tar.gz ${formal_package}.tar.gz out/
+
+            #zip -9 ${debug_package}.zip ${debug_package}
+            #zip -9 ${formal_package}.zip ${formal_package}
+            #mkdir out
+            #mv ${debug_package}.zip ${formal_package}.zip out/
 
       - store_artifacts:
           path: << pipeline.parameters.gen-package-root >>/out/*

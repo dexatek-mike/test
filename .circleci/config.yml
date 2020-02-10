@@ -124,17 +124,6 @@ jobs:
       - store_artifacts:
           path: << pipeline.parameters.project-root >>/<< parameters.out-dir >>/
           destination: << pipeline.parameters.artifact-out >>/bin
-  gen_release_package:
-    working_directory: << pipeline.parameters.gen-package-root >>
-    docker:
-      - image: dexatek/dk-ameba1:1.2
-    environment:
-      PATH_GEN_PACKAGE_ROOT: << pipeline.parameters.gen-package-root >>
-      PATH_TOOLS: << pipeline.parameters.common-tools >>
-    parameters:
-    steps:
-      - attach_workspace:
-          at: temp
   gen_flash_bin:
     working_directory: << pipeline.parameters.gen-flash-root-win >>
     executor:
@@ -144,6 +133,7 @@ jobs:
       PATH_HOME: << pipeline.parameters.gen-flash-root >>
       DIR_REPO: << pipeline.parameters.subdir-gen-flash-repo >>
       GIT_REPO: << pipeline.parameters.repo-gen-flash >>
+      PATH_TOOLS: << pipeline.parameters.common-tools >>
     steps:
       - unless:
           condition: << pipeline.parameters.config-support-mp-tool >>
@@ -154,10 +144,7 @@ jobs:
       - run:
           name: generate flah.bin
           command: |
-            pwd
-            ls -a .
-            echo "realpath .=$(realpath .)"
-            share_dir=`realpath $(temp)`
+            share_dir=`realpath temp`
 
             echo "share_dir=$(share_dir)"
 
@@ -196,6 +183,20 @@ jobs:
       - store_artifacts:
           path: << pipeline.parameters.gen-flash-root-win >>\\<< pipeline.parameters.subdir-gen-flash-repo >>\\flash_bin
           destination: << pipeline.parameters.artifact-out >>/flash_bin
+  gen_release_package:
+    working_directory: << pipeline.parameters.gen-package-root >>
+    docker:
+      - image: dexatek/dk-ameba1:1.2
+    environment:
+      PATH_GEN_PACKAGE_ROOT: << pipeline.parameters.gen-package-root >>
+    parameters:
+    steps:
+      - attach_workspace:
+          at: temp
+      - run:
+          name: generate release package
+          command: |
+            pwd
 workflows:
   version: 2.1
   build_and_pack:

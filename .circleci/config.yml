@@ -207,15 +207,14 @@ jobs:
           name: generate release package
           command: |
 
+            share_dir=$(realpath ./temp)
+            odm_name=<< parameters.odm-name >>
+            source ${share_dir}/normal/commit_info.env
             echo "-------------"
             echo "MY_COMMIT_HASH=${MY_COMMIT_HASH}"
             echo "MY_COMMIT_TAG=${MY_COMMIT_TAG}"
             echo "MY_PROJECT_NAME=${MY_PROJECT_NAME}"
             echo "-------------"
-
-            share_dir=$(realpath ./temp)
-            odm_name=<< parameters.odm-name >>
-            source ${share_dir}/normal/commit_info.env
             production_image="PRODUCTION-${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}.bin"
             ota_image="OTA-${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}.bin"
             mp_ota_image="MP_OTA-${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}.bin"
@@ -227,6 +226,13 @@ jobs:
             path_intenal=$(find ${debug_package} -type d -iname "Formal_Release")
             path_external=$(find ${debug_package} -type d -iname "Internal_Release")
             path_soc=$(find ${debug_package} -type d -iname "RTK*")
+            echo "-------------"
+            ls -a ${share_dir}/flash_bin
+            echo "-------------"
+            ls -a ${share_dir}/flash_bin/normal
+            echo "-------------"
+            ls -a ${share_dir}/flash_bin/release
+            echo "-------------"
             mv ${share_dir}/flash_bin/normal/flash.bin ${path_soc}/${production_image}
             mv ${share_dir}/normal/ota.bin ${path_external}/${ota_image}
             mv ${share_dir}/normal/ram_all.bin ${path_intenal}/${ram_all_image}
@@ -238,9 +244,9 @@ jobs:
             path_intenal=$(find ${formal_package} -type d -iname "Formal_Release")
             path_external=$(find ${formal_package} -type d -iname "Internal_Release")
             path_soc=$(find ${formal_package} -type d -iname "RTK*")
-            mv ${share_dir}/flash_bin/normal/flash.bin ${path_soc}/${production_image}
-            mv ${share_dir}/normal/ota.bin ${path_external}/${ota_image}
-            mv ${share_dir}/normal/ram_all.bin ${path_intenal}/${ram_all_image}
+            mv ${share_dir}/flash_bin/release/flash.bin ${path_soc}/${production_image}
+            mv ${share_dir}/release/ota.bin ${path_external}/${ota_image}
+            mv ${share_dir}/release/ram_all.bin ${path_intenal}/${ram_all_image}
             if [[ ${NO_MP_OTA} != 'y' ]] ; then
               cp ${share_dir}/mp_tool/bin/ota.bin ${path_intenal}/${mp_ota_image_name}
             fi

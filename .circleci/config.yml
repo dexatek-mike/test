@@ -41,7 +41,7 @@ jobs:
   build:
     working_directory: << pipeline.parameters.project-root >>
     docker:
-      - image: yalee104/dk-ameba1:1.1
+      - image: yalee104/dk-ameba1:1.2
     environment:
       PATH_PROJECT_ROOT: << pipeline.parameters.project-root >>
       DIR_BUILD: << pipeline.parameters.subdir-project-build >>

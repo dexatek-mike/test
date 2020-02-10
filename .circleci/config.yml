@@ -254,4 +254,4 @@ workflows:
       - gen_release_package:
           name: gen_package
           requires:
-            - gen_flash_bin
+            - gen_flash

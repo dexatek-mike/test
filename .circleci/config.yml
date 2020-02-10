@@ -32,7 +32,7 @@ parameters:
     default: true
   config-fake-build:
     type: boolean
-    default: false
+    default: true
 
 orbs:
   win: circleci/windows@1.0.0
@@ -80,6 +80,8 @@ jobs:
                 unless: << pipeline.parameters.config-support-mp-tool >>
             - run: echo 'export BUILD_MP_TOOL=y' >> $BASH_ENV
       - checkout
+      - setup_remote_docker: 
+          docker_layer_caching: true
       - run:
           name: Make (build project)
           command: |
@@ -169,11 +171,11 @@ jobs:
           command: circleci-agent step halt
           when: on_fail
       - persist_to_workspace:
-          root: << pipeline.parameters.gen-flash-root-win >>\<< pipeline.parameters.subdir-gen-flash-repo >>
+          root: << pipeline.parameters.gen-flash-root-win >>\\<< pipeline.parameters.subdir-gen-flash-repo >>
           paths:
             - flash_bin
       - store_artifacts:
-          path: << pipeline.parameters.gen-flash-root-win >>\<< pipeline.parameters.subdir-gen-flash-repo >>\flash_bin
+          path: << pipeline.parameters.gen-flash-root-win >>\\<< pipeline.parameters.subdir-gen-flash-repo >>\\flash_bin
           destination: << pipeline.parameters.artifact-out >>/flash_bin
 workflows:
   version: 2.1

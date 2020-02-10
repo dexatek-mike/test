@@ -91,16 +91,11 @@ jobs:
             default_bin_dir=${PATH_PROJECT_ROOT}/sdk-ameba-v4.0d_gcc/utils/default_bin
 
             # save the current commit info
-            git rev-parse HEAD | cut -c 1-8 > commit_hash.txt
-            git tag -l --points-at HEAD > commit_tag.txt
-            cat commit_hash.txt
-            cat commit_tag.txt
+            echo "MY_COMMIT_HASH=$(git rev-parse HEAD | cut -c 1-8)" >> commit_info.env
+            echo "MY_COMMIT_TAG=$(git tag -l --points-at HEAD | egrep -o 'v[0-9]+(\.[0-9]+).*')" >> commit_info.env
+            echo "MY_PROJECT_NAME=$(ls ${build_dir}/../ | grep "EWARM" | sed 's:/.*::')" >> commit_info.env
 
             #project_name_with_ver="$project_name-$odm_name-$release_version-$commit_hash"
-            #path_release=$root_path/release/$project_name_with_ver
-            #path_bin_formal=$path_release/$soc_name/Internal_FW_Package/Formal_Release
-            #path_bin_internal=$path_release/$soc_name/Internal_FW_Package/Internal_Release
-            #file_dest_zip=$root_path/release/$project_name_with_ver.zip
 
             # generate fake files to speed up tests if FAKE_BUILD is defined
             if [ "${FAKE_BUILD}" == 'y' ] ; then
@@ -117,6 +112,7 @@ jobs:
             mkdir ${out_dir}
             cp ${build_dir}/build.log ${PATH_PROJECT_ROOT}/
             cp ${build_dir}/build.log ${out_dir}/
+            cp ${PATH_PROJECT_ROOT}/commit_info.env ${out_dir}/
             cp ${release_dir}/* -r ${out_dir}/
             find ${release_dir} -name "A000.dat" | xargs -i cp {} ${out_dir}
             cp ${bin_dir}/* -r ${out_dir}/
@@ -156,11 +152,6 @@ jobs:
           name: generate flah.bin
           command: |
             share_dir=$(realpath temp)
-
-            echo "share_dir=$(realpath ${share_dir})"
-            echo "--------"
-            ls -a ${share_dir}
-            echo "--------"
 
             cd ${PATH_HOME}
             git clone ${GIT_REPO} ${DIR_REPO}
@@ -204,6 +195,9 @@ jobs:
     environment:
       PATH_GEN_PACKAGE_ROOT: << pipeline.parameters.gen-package-root >>
     parameters:
+      odm-name:
+        type: string
+        default: SigmaCasa
     steps:
       - attach_workspace:
           at: temp
@@ -225,7 +219,7 @@ workflows:
           release-build: false
           filters:
             tags:
-              only: /^v[0-9]+\.[0-99]+\.[0-999]/
+              only: test
       - build:
           name: build_release
           out-dir: release
@@ -233,7 +227,7 @@ workflows:
           release-build: true
           filters:
             tags:
-              only: /^v[0-9]+\.[0-99]+\.[0-999]/
+              only: test
       - build:
           name: build_mp_tool
           out-dir: mp_tool
@@ -241,7 +235,7 @@ workflows:
           release-build: true
           filters:
             tags:
-              only: /^v[0-9]+\.[0-99]+\.[0-999]/
+              only: test
       - gen_flash_bin:
           name: gen_flash
           requires:
@@ -253,6 +247,7 @@ workflows:
               only: /.*/
       - gen_release_package:
           name: gen_package
+          odm-name: SigmaCasa
           requires:
             - gen_flash
           filters:

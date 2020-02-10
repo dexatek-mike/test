@@ -175,6 +175,7 @@ jobs:
             fi
             sh gen_flash_bin.sh
             cp flash.bin flash_bin/release/
+
       - run:
           name: failed to generate flash image
           command: circleci-agent step halt
@@ -241,10 +242,10 @@ jobs:
               cp ${share_dir}/mp_tool/bin/ota.bin ${path_intenal}/${mp_ota_image_name}
             fi
 
- #           tar zcvf ${debug_package}.tar.gz ${debug_package}
- #           tar zcvf ${formal_package}.tar.gz ${formal_package}
- #           mkdir out
- #           mv ${debug_package}.tar.gz ${formal_package}.tar.gz out/
+            #tar zcvf ${debug_package}.tar.gz ${debug_package}
+            #tar zcvf ${formal_package}.tar.gz ${formal_package}
+            #mkdir out
+            #mv ${debug_package}.tar.gz ${formal_package}.tar.gz out/
 
              zip -9 ${debug_package}.zip ${debug_package}
              zip -9 ${formal_package}.zip ${formal_package}

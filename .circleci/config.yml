@@ -89,11 +89,11 @@ jobs:
             out_dir=<< parameters.out-dir >>
 
             echo "------------"
-            ls -a ..
-            echo "------------"
             ls -a ../..
             echo "------------"
-            ls -a ../tools
+            ls -a ../../..
+            echo "------------"
+            ls -a ../../dev/tools
             echo "------------"
 
             # make; generate fake files to speed up tests if FAKE_BUILD is defined

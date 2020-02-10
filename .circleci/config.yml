@@ -92,7 +92,7 @@ jobs:
 
             # save the current commit info
             echo "MY_COMMIT_HASH=$(git rev-parse HEAD | cut -c 1-8)" >> commit_info.env
-            echo "MY_COMMIT_TAG=$(git tag -l --points-at HEAD | egrep -o 'v[0-9]+(\.[0-9]+).*')" >> commit_info.env
+            echo "MY_COMMIT_TAG=$(git tag -l --points-at HEAD | egrep -o '[0-9]+(\.[0-9]+).*')" >> commit_info.env
             echo "MY_PROJECT_NAME=$(ls ${build_dir}/../ | grep "EWARM" | sed 's:/.*::')" >> commit_info.env
 
             # generate fake files to speed up tests if FAKE_BUILD is defined
@@ -210,11 +210,6 @@ jobs:
             share_dir=$(realpath ./temp)
             odm_name=<< parameters.odm-name >>
             source ${share_dir}/normal/commit_info.env
-            echo "-------------"
-            echo "MY_COMMIT_HASH=${MY_COMMIT_HASH}"
-            echo "MY_COMMIT_TAG=${MY_COMMIT_TAG}"
-            echo "MY_PROJECT_NAME=${MY_PROJECT_NAME}"
-            echo "-------------"
             production_image="PRODUCTION-${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}.bin"
             ota_image="OTA-${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}.bin"
             mp_ota_image="MP_OTA-${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}.bin"
@@ -222,17 +217,11 @@ jobs:
             formal_package="${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}"
             debug_package="${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}-debug"
 
-            mv ${share_dir}/normal/package ${debug_package}
+            src=$(ls ${share_dir}/normal/package/ | grep "EWARM" | sed 's:/.*::')
+            mv ${src} ${debug_package}
             path_intenal=$(find ${debug_package} -type d -iname "Formal_Release")
             path_external=$(find ${debug_package} -type d -iname "Internal_Release")
             path_soc=$(find ${debug_package} -type d -iname "RTK*")
-            echo "-------------"
-            ls -a ${share_dir}/flash_bin
-            echo "-------------"
-            ls -a ${share_dir}/flash_bin/normal
-            echo "-------------"
-            ls -a ${share_dir}/flash_bin/release
-            echo "-------------"
             mv ${share_dir}/flash_bin/normal/flash.bin ${path_soc}/${production_image}
             mv ${share_dir}/normal/ota.bin ${path_external}/${ota_image}
             mv ${share_dir}/normal/ram_all.bin ${path_intenal}/${ram_all_image}
@@ -240,7 +229,8 @@ jobs:
               cp ${share_dir}/mp_tool/bin/ota.bin ${path_intenal}/${mp_ota_image_name}
             fi
 
-            mv ${share_dir}/release/package ${formal_package}
+            src=$(ls ${share_dir}/release/package/ | grep "EWARM" | sed 's:/.*::')
+            mv ${src} ${formal_package}
             path_intenal=$(find ${formal_package} -type d -iname "Formal_Release")
             path_external=$(find ${formal_package} -type d -iname "Internal_Release")
             path_soc=$(find ${formal_package} -type d -iname "RTK*")
@@ -251,13 +241,19 @@ jobs:
               cp ${share_dir}/mp_tool/bin/ota.bin ${path_intenal}/${mp_ota_image_name}
             fi
 
-            tar zcvf ${debug_package}.tar.gz ${debug_package}
-            tar zcvf ${formal_package}.tar.gz ${formal_package}
-            mkdir out            
-            mv ${debug_package}.tar.gz ${formal_package}.tar.gz out/
+ #           tar zcvf ${debug_package}.tar.gz ${debug_package}
+ #           tar zcvf ${formal_package}.tar.gz ${formal_package}
+ #           mkdir out
+ #           mv ${debug_package}.tar.gz ${formal_package}.tar.gz out/
+
+             zip -9 ${debug_package}.zip ${debug_package}
+             zip -9 ${formal_package}.zip ${formal_package}
+             mkdir out
+             mv ${debug_package}.zip ${formal_package}.zip out/
+
       - store_artifacts:
-          path: << pipeline.parameters.gen-package-root >>/out
-          destination: << pipeline.parameters.artifact-out >>/out
+          path: << pipeline.parameters.gen-package-root >>/out/*
+          destination: << pipeline.parameters.artifact-out >>
 
 workflows:
   version: 2.1

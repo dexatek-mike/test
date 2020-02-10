@@ -2,13 +2,7 @@ version: 2.1
 parameters:
   project-root:
     type: string
-    default: "~/home/dev/app-project"
-  subdir-project-build:
-    type: string
-    default: "sdk-ameba-v4.0d_gcc/project/realtek_ameba1_va0_example/GCC-RELEASE"
-  subdir-project-bin:
-    type: string
-    default: "sdk-ameba-v4.0d_gcc/project/realtek_ameba1_va0_example/GCC-RELEASE/application/Debug/bin"
+    default: "/home/dev/app-project"
   artifact-out:
     type: string
     default: "~/home/dev/out"
@@ -44,10 +38,6 @@ jobs:
       - image: dexatek/dk-ameba1:1.2
     environment:
       PATH_PROJECT_ROOT: << pipeline.parameters.project-root >>
-      DIR_BUILD: << pipeline.parameters.subdir-project-build >>
-      DIR_BIN: << pipeline.parameters.subdir-project-bin >>
-      DIR_RELEASE: sdk-ameba-v4.0d_gcc/release
-      DIR_DEFAULT_BIN: sdk-ameba-v4.0d_gcc/utils/default_bin
     parameters:
       out-dir:
         type: string
@@ -86,7 +76,11 @@ jobs:
       - run:
           name: Make (build project)
           command: |
-            out_dir=<< parameters.out-dir >>
+            out_dir=${PATH_PROJECT_ROOT}/<< parameters.out-dir >>
+            build_dir=${PATH_PROJECT_ROOT}/sdk-ameba-v4.0d_gcc/project/realtek_ameba1_va0_example/GCC-RELEASE
+            bin_dir=${build_dir}/application/Debug/bin
+            release_dir=${PATH_PROJECT_ROOT}/sdk-ameba-v4.0d_gcc/release
+            default_bin_dir=${PATH_PROJECT_ROOT}/sdk-ameba-v4.0d_gcc/utils/default_bin
 
             echo "------------"
             ls -a ../..
@@ -98,21 +92,21 @@ jobs:
 
             # make; generate fake files to speed up tests if FAKE_BUILD is defined
             if [ "${FAKE_BUILD}" == 'y' ] ; then
-              mkdir -p ${DIR_BIN}
-              echo "fake build" > ${DIR_BUILD}/build.log
-              cp ${DIR_DEFAULT_BIN}/* -r ${DIR_BIN}/
+              mkdir -p ${bin_dir}
+              echo "fake build" > ${build_dir}/build.log
+              cp ${default_bin_dir}/* -r ${bin_dir}/
             else
-              pushd ${DIR_BUILD}
+              pushd ${build_dir}
               make > build.log 2>&1
               popd
             fi
 
             mkdir ${out_dir}
-            cp ${DIR_BUILD}/build.log .
-            cp ${DIR_BUILD}/build.log ${out_dir}/
-            cp ${DIR_RELEASE}/* -r ${out_dir}/
-            find ${DIR_RELEASE} -name "A000.dat" | xargs -i cp {} ${out_dir}
-            cp ${DIR_BIN}/* -r ${out_dir}/
+            cp ${build_dir}/build.log ${PATH_PROJECT_ROOT}/
+            cp ${build_dir}/build.log ${out_dir}/
+            cp ${release_dir}/* -r ${out_dir}/
+            find ${release_dir} -name "A000.dat" | xargs -i cp {} ${out_dir}
+            cp ${bin_dir}/* -r ${out_dir}/
       - store_artifacts:
           path: << pipeline.parameters.project-root >>/build.log
           destination: << pipeline.parameters.artifact-out >>/build.log

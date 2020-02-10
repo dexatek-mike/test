@@ -221,8 +221,7 @@ jobs:
 
 workflows:
   version: 2.1
-  informal_release:
-  formal_release:
+  release:
     jobs:
       - build:
           name: build_normal

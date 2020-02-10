@@ -225,7 +225,7 @@ workflows:
           release-build: false
           filters:
             tags:
-              ignore: /.*/
+              only: /.*/
       - build:
           name: build_release
           out-dir: release
@@ -250,11 +250,11 @@ workflows:
             - build_mp_tool
           filters:
             tags:
-              ignore: /.*/
+              only: /.*/
       - gen_release_package:
           name: gen_package
           requires:
             - gen_flash
           filters:
             tags:
-              ignore: /.*/
+              only: /.*/

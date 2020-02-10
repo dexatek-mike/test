@@ -91,6 +91,7 @@ jobs:
             # make; generate fake files to speed up tests if FAKE_BUILD is defined
             if [ "${FAKE_BUILD}" == 'y' ] ; then
               mkdir -p ${DIR_BIN}
+              echo "fake build" > ${DIR_BUILD}/build.log
               cp ${DIR_DEFAULT_BIN}/* -r ${DIR_BIN}/
             else
               pushd ${DIR_BUILD}

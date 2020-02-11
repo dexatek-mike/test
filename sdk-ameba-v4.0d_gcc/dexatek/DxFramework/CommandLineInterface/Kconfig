@@ -1,0 +1,10 @@
+menuconfig DX_CONSOLE_SUPPORT
+    bool "Command Line Interface"
+    default y
+
+if DX_CONSOLE_SUPPORT
+
+comment "<empty>"
+
+endif
+

@@ -1,0 +1,5 @@
+menu "Device Info Manager"
+
+comment "<empty>"
+
+endmenu

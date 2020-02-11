@@ -1,0 +1,41 @@
+menu "BSP"
+
+comment "Platform Configurations (!!! MUST Check !!!)"
+
+choice
+
+prompt "SOC Type"
+default PLAT_UNKNOWN
+
+config PLAT_UNKNOWN
+    bool "Unknown Platform"
+
+config PLAT_TEMPLATE
+    bool "Template Platform"
+    select MACH_TEMPLATE
+
+config PLAT_AMEBA_RTL8195AM
+    bool "Ameba RTL8195AM Platform"
+
+config PLAT_ESP32_S0WD
+    bool "ESP32 S0WD Platform"
+    select DX_ESP32_BLE_SUPPORT
+
+config PLAT_RTS390X
+    bool "RTS390X"
+
+endchoice
+
+if PLAT_TEMPLATE
+
+config MACH_TEMPLATE
+    bool "Template Machine"
+
+endif
+
+comment "Common Settings"
+config WLAN0_NAME
+    string "WLAN0 Name"
+    default "wlan0"
+
+endmenu

@@ -1,0 +1,114 @@
+menu "Debugger"
+
+comment "Since we are using PURE print and limited, we can reduce this to 2KB"
+comment "or even less depending on actual result base on RTOS and platform"
+config SYSDEBUGGER_DEBUGGER_STACK_SIZE
+    int "Stack Size - Debugger"
+    default 896 if PLAT_AMEBA_RTL8195AM
+    default 2048 if PLAT_ESP32_S0WD
+    default 30720 if PLAT_RTS390X
+    default 896
+    help
+        Since we are using PURE print and limited, we can reduce this to 2KB
+        or even less depending on actual result base on RTOS and platform
+
+comment "level: error=1, warn=2, info=3, debug=4, trace=5"
+config DX_DEBUGGER_LOG_LEVEL
+    int "Dexatek Debugger Log Level"
+    range 0 5
+    default 2
+    help
+        Dexatek Debug Log Level
+
+config ENABLE_THREAD_STACK_DEBUGGING
+    bool "Enable Thread Stack Debugging"
+    default n
+    help
+        Support Dexatek Thread Stack Debugging
+
+config ENABLE_MEMORY_USAGE_DEBUGGING
+    bool "Enable Memory Usage Debugging"
+    default n
+    help
+        Support Dexatek Memory Usage Debugging
+
+config ENABLE_MEMORY_LEAK_DEBUGGING
+    bool "Enable Memory Leak Debugging"
+    default n
+    help
+        Support Dexatek Memory Leak Debugging
+
+config ENABLE_CPU_USAGE_DEBUGGING
+    depends on FREERTOS_GENERATE_RUN_TIME_STATS
+    bool "Enable CPU Usage Debugging"
+    default n
+    help
+        Support Dexatek CPU Usage Debugging
+
+config ENABLE_MUTEX_DEADLOCK_DEBUGGING
+    bool "Enable Mutex Deadlock Debugging"
+    default n
+    help
+        Support Dexatek Mutex Deadlock Debugging
+
+config ENABLE_BLE_KEEPER_DEBUGGING
+    bool "Enable BLE Keeper Debugging"
+    default n
+    help
+        Support Dexatek BLE Keeper Debugging
+
+config ENABLE_SERVER_DEBUGGING
+    bool "Enable DKServer Debugging"
+    default n
+    help
+        Support Dexatek Server Manager Debugging
+
+config ENABLE_MULTICAST_UDP_DEBUGGING
+    bool "Enable Multicast UDP Debugging"
+    default n
+
+config ENABLE_COLORED_OUTPUT
+    bool "Enable colored output"
+    default n
+
+config MEMORY_LEAK_DEBUGGING_MAXIMUM_COUNT
+    int "Maximum Memory Leak Entry Count"
+    depends on ENABLE_MEMORY_LEAK_DEBUGGING
+    default 128
+
+config MEMORY_LEAK_DEBUGGING_MAGIC_NUMBER
+    hex "Memory Leak Debugging Maigc Number"
+    depends on ENABLE_MEMORY_LEAK_DEBUGGING
+    default 0xefdcba98
+
+config MEMORY_LEAK_DEBUGGING_INTERVAL
+    int "Memory Leak Debugging Interval (ms)"
+    depends on ENABLE_MEMORY_LEAK_DEBUGGING
+    default 30000
+    help
+        Memory accupied more this value will be judge as leak
+
+config MEMORY_LEAK_DEBUGGING_TIMEDIFF_MAX
+    int "Memory Leak Debugging Timediff Max (ms)"
+    depends on ENABLE_MEMORY_LEAK_DEBUGGING
+    default 9999999000
+
+config MAXIMUM_DEBUGGER_THREAD_COUNT
+    int "Maximum Debugger Thread Count"
+    default 30
+
+config SYS_DEBUGGER_JOB_QUEUE_DEPT
+    int "Queue Size - Debugger Job"
+    default 80
+    help
+        old setting: 20
+
+config SYS_DEBUGGER_MAX_DUMP_BATCH_SIZE
+    int "Debugger Maximum Dump Batch Size"
+    default 16
+
+config SYS_DEBUGGER_MAX_DUMPSTRING_BATCH_SIZE
+    int "Debugger Maximum Dump String Batch Size"
+    default 96
+
+endmenu

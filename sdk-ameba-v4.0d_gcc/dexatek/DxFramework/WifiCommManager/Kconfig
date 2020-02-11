@@ -1,0 +1,45 @@
+menuconfig DX_WIFI_MANAGER_SUPPORT
+    bool "WiFi Manager"
+    default y
+
+if DX_WIFI_MANAGER_SUPPORT
+
+config WIFI_MANAGER_TX_STACK_SIZE
+    int "Stack Size - WiFi Manager TX"
+    default 1792 if PLAT_AMEBA_RTL8195AM
+    default 3072 if PLAT_ESP32_S0WD
+    default 61440 if PLAT_RTS390X
+    default 1792
+
+config WIFI_MANAGER_CTRL_WK_STACK_SIZE
+    int "Stack Size - WiFi Manager Workqueue"
+    default 1024 if PLAT_AMEBA_RTL8195AM
+    default 3072 if PLAT_ESP32_S0WD
+    default 1024 if PLAT_RTS390X
+    default 1024
+
+config WIFI_MANAGER_CTRL_WK_QUEUE_SIZE
+    int "Queue Size - WiFi Communication Control Workqueue"
+    default 10 if PLAT_AMEBA_RTL8195AM
+    default 10 if PLAT_ESP32_S0WD
+    default 30 if PLAT_RTS390X
+    default 10
+
+config WIFI_COMM_JOB_QUEUE_DEPT
+    int "Queue Size - WiFi Communication Job"
+    default 2
+    help
+        old setting: 1
+
+config WIFI_COMM_MAXIMUM_JOB_DATA_SIZE
+    int "WiFi Communication Maximum Job Data Size"
+    default 180 if PLAT_AMEBA_RTL8195AM
+    default 80 if PLAT_ESP32_S0WD
+    default 180 if PLAT_RTS390X
+    default 180
+
+config MAX_WIFI_SEVERE_ERROR_COUNT
+    int "Maximum WIFI Severe Error Count"
+    default 10
+
+endif

@@ -1,0 +1,41 @@
+menuconfig DX_MQTT_MANAGER_SUPPORT
+    bool "MQTT Manager"
+    default y
+
+if DX_MQTT_MANAGER_SUPPORT
+
+config MQTT_MANAGER_TX_STACK_SIZE
+    int "Stack Size - MQTT Manager TX"
+    default 3072 if PLAT_AMEBA_RTL8195AM
+    default 3072 if PLAT_ESP32_S0WD
+    default 3072 if PLAT_RTS390X
+    default 3072
+
+config MQTT_MANAGER_WK_STACK_SIZE
+    int "Stack Size - MQTT Manager Worker"
+    default 1024 if PLAT_AMEBA_RTL8195AM
+    default 2048 if PLAT_ESP32_S0WD
+    default 1024 if PLAT_RTS390X
+    default 1024
+
+config MQTT_MAXIMUM_DATA_LEN
+    int "MQTT Data Maximum Length"
+    default 1024
+
+config MQTT_MANAGER_THREAD_QUEUE_SIZE
+    int "Queue Size - MQTT Manager Topic"
+    default 5
+
+config MQTT_MANAGER_WK_QUEUE_SIZE
+    int "Queue Size - MQTT Workqueue"
+    default 5
+
+config MQTT_SENDBUF_LEN
+    int "MQTT Send Buffer Length"
+    default 1024
+
+config MQTT_READBUF_LEN
+    int "MQTT Read Buffer Length"
+    default 1024
+
+endif

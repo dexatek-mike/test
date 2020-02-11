@@ -1,0 +1,5 @@
+menu "State Machine"
+
+comment "<empty>"
+
+endmenu

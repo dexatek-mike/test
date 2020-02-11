@@ -1,0 +1,7 @@
+menu "Memory Manager"
+
+config EXTERNAL_MEMORY_SIZE
+    hex "External Memory Size"
+    default 0x100000
+
+endmenu

@@ -1,0 +1,18 @@
+menuconfig DX_LED_MANAGER_SUPPORT
+    bool "LED Manager"
+    default y
+
+if DX_LED_MANAGER_SUPPORT
+
+config LED_MANAGER_STACK_SIZE
+    int "Stack Size - LED Manager"
+    default 384 if PLAT_AMEBA_RTL8195AM
+    default 2048 if PLAT_ESP32_S0WD
+    default 384 if PLAT_RTS390X
+    default 384
+
+config LED_MANAGER_JOB_QUEUE_DEPT
+    int "Queue Size - LED Job"
+    default 10
+
+endif

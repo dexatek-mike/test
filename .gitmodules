@@ -1,0 +1,6 @@
+[submodule "dexatek/DxFramework"]
+	path = sdk-ameba-v4.0d_gcc/dexatek/DxFramework
+	url = https://bitbucket.org/Dexatek/shsframework.git
+[submodule "dexatek/AlarmCommon"]
+	path = sdk-ameba-v4.0d_gcc/dexatek/AlarmCommon
+	url = https://bitbucket.org/Dexatek/shsrtkameba-alarmsystemcommonsubmodule.git

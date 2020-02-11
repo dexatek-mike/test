@@ -1,0 +1,11 @@
+menu "DxFramework Configurations"
+
+source "$PATH_MENU_ROOT/Kconfig.constants"
+
+source "$PATH_MENU_ROOT/Kconfig.project"
+
+source "$PATH_MENU_ROOT/Kconfig.kernel"
+
+source "$PATH_MENU_ROOT/drivers/Kconfig"
+
+endmenu

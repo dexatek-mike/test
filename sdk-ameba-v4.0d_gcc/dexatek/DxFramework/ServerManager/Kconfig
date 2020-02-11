@@ -1,0 +1,72 @@
+menu "Server Manager"
+
+config SERVERMANAGER_MANAGER_TX_STACK_SIZE
+    int "Stack Size - Server Manager TX"
+    default 2048 if PLAT_AMEBA_RTL8195AM
+    default 3072 if PLAT_ESP32_S0WD
+    default 2048 if PLAT_RTS390X
+    default 2048
+
+config SERVERMANAGER_MANAGER_WK_STACK_SIZE
+    int "Stack Size - Server Manager Workqueue"
+    default 1280 if PLAT_AMEBA_RTL8195AM
+    default 4096 if PLAT_ESP32_S0WD
+    default 1280 if PLAT_RTS390X
+    default 1280
+
+config SERVERMANAGER_HTTP_TX_SIZE
+    int "Stack Size - Server Manager HTTP TX"
+    default 4096 if PLAT_AMEBA_RTL8195AM
+    default 6144 if PLAT_ESP32_S0WD
+    default 4096 if PLAT_RTS390X
+    default 4096
+
+config SERVERMANAGER_HTTP_WK_SIZE
+    int "Stack Size - Server Manager HTTP Workqueue"
+    default 1280 if PLAT_AMEBA_RTL8195AM
+    default 8192 if PLAT_ESP32_S0WD
+    default 1280 if PLAT_RTS390X
+    default 1280
+
+config MAX_JSON_ELEMENT_COUNT
+    int "JSON Maximum Supported Element Count"
+    default 2500 if PLAT_AMEBA_RTL8195AM
+    default 500 if PLAT_ESP32_S0WD
+    default 2500 if PLAT_RTS390X
+    default 2500
+
+config SRVM_THREAD_QUEUE_SIZE
+    int "Queue Size - Server Manager Thread"
+    range 30 50 if BLE_MANAGER_SUPPORT_NETWORK_MESH
+    default 20
+
+comment "WARNING: We increase the size to 36KB to support large container and peripherals. This is temporarily only as our data retrive mechanism need revise."
+config SRVM_THREAD_BUFFER_SIZE
+    int "Server Manager Thread Buffer Size"
+    default 4096
+
+config HTTP_THREAD_QUEUE_SIZE
+    int "Queue Size - HTTP Thread"
+    default 2
+
+config HTTP_WORKER_QUEUE_SIZE
+    int "Queue Size - HTTP Worker"
+    default 3
+
+config HTTP_BUFFER_SIZE
+    int "HTTP Buffer Size"
+    default 36864
+
+config SRVM_THREAD_PRIORITY
+    int
+    default DXTASK_PRIORITY_NORMAL
+
+config SERVER_MANAGER_REQ_RSP_TIMEOUT
+    int "Server Manager Request/Response Timeout"
+    default 20000
+
+config SERVER_MANAGER_REQ_RSP_DEBUGGING
+    bool "Server Manager Request/Response Debugging"
+    default n
+
+endmenu

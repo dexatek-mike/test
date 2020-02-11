@@ -1,0 +1,24 @@
+#
+# Dexatek Project Configuration
+#
+#   Makefile: dk_project.mk
+
+DEXATEK_INCLUDES :=
+DEXATEK_SRC_C :=
+DEXATEK_DRAM_C :=
+DEXATEK_CFLAGS :=
+
+DEXATEK_CFLAGS += -DDK_GATEWAY
+DEXATEK_CFLAGS += -DCONFIG_PLATFORM_8195A
+DEXATEK_CFLAGS += -DconfigUSE_LOCAL_GPIO_SETTING
+ifeq ($(BUILD_MP_TOOL),y)
+DEXATEK_CFLAGS += -DconfigMP_OTA_RELEASE
+endif
+ifeq ($(RELEASE_BUILD),y)
+DEXATEK_CFLAGS += -DRELEASE_MODE
+endif
+
+export DEXATEK_INCLUDES DEXATEK_SRC_C DEXATEK_DRAM_C DEXATEK_CFLAGS
+
+all:
+	@echo "import Dexatek project settings"

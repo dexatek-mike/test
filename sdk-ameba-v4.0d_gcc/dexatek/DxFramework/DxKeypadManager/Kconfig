@@ -1,0 +1,25 @@
+menuconfig DX_KEYPAD_MANAGER_SUPPORT
+    bool "Keypad Manager"
+    default y
+
+if DX_KEYPAD_MANAGER_SUPPORT 
+
+config KEYPADMANAGER_WK_STACK_SIZE
+    int "Stack Size - Keypad Manager Worker"
+    default 384 if PLAT_AMEBA_RTL8195AM
+    default 3072 if PLAT_ESP32_S0WD
+    default 384 if PLAT_RTS390X
+    default 384
+
+config KEYPADMANAGER_RX_STACK_SIZE
+    int "Stack Size - Keypad Manager RX"
+    default 0 if PLAT_AMEBA_RTL8195AM
+    default 1024 if PLAT_ESP32_S0WD
+    default 0 if PLAT_RTS390X
+    default 0
+
+config KEYPADMANAGER_WK_QUEUE_SIZE
+    int "Queue Size - Keypad Manager Workqueue"
+    default 5
+
+endif

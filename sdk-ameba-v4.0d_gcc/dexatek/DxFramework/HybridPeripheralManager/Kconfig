@@ -1,0 +1,34 @@
+menuconfig DX_HYBRID_MANAGER_SUPPORT
+    bool "Hybrid Peripheral Manager"
+    default y
+
+if DX_HYBRID_MANAGER_SUPPORT
+
+config HPMANAGER_SERVER_STACK_SIZE
+    int "Stack Size - HP Manager Server"
+    default 1536 if PLAT_AMEBA_RTL8195AM
+    default 3072 if PLAT_ESP32_S0WD
+    default 1536 if PLAT_RTS390X
+    default 1536
+
+config HPMANAGER_CLIENT_STACK_SIZE
+    int "Stack Size - HP Manager Client"
+    default 1280 if PLAT_AMEBA_RTL8195AM
+    default 3072 if PLAT_ESP32_S0WD
+    default 1280 if PLAT_RTS390X
+    default 1280
+
+config HP_CMD_MESSAGE_ENTRY_SIZE
+    depends on DEVICE_IS_HYBRID
+    int "Single Queue Entry Maximum Size - HP Command Message"
+    default 1536
+    help
+        Calculate by CONFIG_MAXIMUM_DEVICE_KEEPER * sizeof (DeviceGenericInfo_t)
+        * 1.2
+
+config HP_CMD_MESSAGE_QUEUE_DEPT
+    depends on DEVICE_IS_HYBRID
+    int "Queue Size - HP Command Message"
+    default 20
+
+endif

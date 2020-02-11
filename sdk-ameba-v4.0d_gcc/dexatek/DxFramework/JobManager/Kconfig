@@ -1,0 +1,21 @@
+menu "Job Manager"
+
+config JOBMANAGER_TX_STACK_SIZE
+    int "Stack Size - Job Manager TX"
+    default 1536 if PLAT_AMEBA_RTL8195AM
+    default 2048 if PLAT_ESP32_S0WD
+    default 1536 if PLAT_RTS390X
+    default 1536
+
+config JOBMANAGER_WK_STACK_SIZE
+    int "Stack Size - Job Manager Worker"
+    default 1024 if PLAT_AMEBA_RTL8195AM
+    default 3072 if PLAT_ESP32_S0WD
+    default 1024 if PLAT_RTS390X
+    default 1024
+
+config MAXIMUM_JOB_ID_INFO_COUNT
+    int "Maximum Job ID Info Count"
+    default 10
+
+endmenu

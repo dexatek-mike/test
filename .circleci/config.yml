@@ -1,0 +1,463 @@
+version: 2.1
+parameters:
+  project-root:
+    type: string
+    default: "/home/dev/app-project"
+  common-tools:
+    type: string
+    default: "/home/dev/tools"
+  artifact-out:
+    type: string
+    default: "~/home/dev/out"
+  gen-flash-root:
+    type: string
+    default: "/c/Users/circleci"
+  gen-flash-root-win:
+    type: string
+    default: "C:\\Users\\circleci"
+  repo-gen-flash:
+    type: string
+    default: "https://github.com/dexatek-mike/ci-win.git"
+  gen-package-root:
+    type: string
+    default: "/home/dev/gen_package"
+  config-support-mp-tool:
+    type: boolean
+    default: false
+  config-native-build:
+    type: boolean
+    default: true
+  config-fake-build:
+    type: boolean
+    default: true
+
+orbs:
+  win: circleci/windows@1.0.0
+
+jobs:
+  prepare_cross_platform_tools:
+    working_directory: << pipeline.parameters.project-root >>
+    docker:
+      - image: dexatek/dk-ameba1:1.3
+    steps:
+      - persist_to_workspace:
+          root: << pipeline.parameters.common-tools >>
+          paths:
+            - flash_tool
+            - utils
+
+  build:
+    working_directory: << pipeline.parameters.project-root >>
+    docker:
+      - image: dexatek/dk-ameba1:1.3
+    environment:
+      PATH_PROJECT_ROOT: << pipeline.parameters.project-root >>
+      PATH_TOOLS: << pipeline.parameters.common-tools >>
+    parameters:
+      out-dir:
+        type: string
+        default: normal
+      build-mp-tool:
+        type: boolean
+        default: false
+      release-build:
+        type: boolean
+        default: false
+      defconfig:
+        type: string
+        default: sdkconfig.sigmacasa
+    steps:
+      - when:
+          condition: << pipeline.parameters.config-fake-build >>
+          steps:
+            - run: echo 'export FAKE_BUILD=y' >> $BASH_ENV
+      - when:
+          condition: << pipeline.parameters.config-native-build >>
+          steps:
+            - run: echo 'export NATIVE_BUILD=y' >> $BASH_ENV
+      - when:
+          condition: << parameters.release-build >>
+          steps:
+            - run: echo 'export RELEASE_BUILD=y' >> $BASH_ENV
+      - when:
+          condition: << parameters.build-mp-tool >>
+          steps:
+            - run:
+                name: does not support building MP tool
+                command: circleci-agent step halt
+                unless: << pipeline.parameters.config-support-mp-tool >>
+            - run: echo 'export BUILD_MP_TOOL=y' >> $BASH_ENV
+      - checkout
+      # need premium plan
+      #- setup_remote_docker: 
+      #    docker_layer_caching: true
+      - run:
+          name: Make (build project)
+          command: |
+
+            # set path variables
+            out_dir=${PATH_PROJECT_ROOT}/<< parameters.out-dir >>
+            build_dir=${PATH_PROJECT_ROOT}/sdk-ameba-v4.0d_gcc/project/realtek_ameba1_va0_example/GCC-RELEASE
+            bin_dir=${build_dir}/application/Debug/bin
+            release_dir=${PATH_PROJECT_ROOT}/sdk-ameba-v4.0d_gcc/release
+            default_bin_dir=${PATH_PROJECT_ROOT}/sdk-ameba-v4.0d_gcc/utils/default_bin
+            dx_framework_dir=${PATH_PROJECT_ROOT}/sdk-ameba-v4.0d_gcc/dexatek/DxFramework
+
+            # install packages to run kconfig subsystem
+            apt-get update
+            apt-get install -y libncurses5-dev flex bison gperf
+
+            # save the current commit info
+            echo "MY_COMMIT_HASH=$(git rev-parse HEAD | cut -c 1-8)" >> commit_info.env
+            echo "MY_COMMIT_TAG=$(git tag -l --points-at HEAD | egrep -o '[0-9]+(\.[0-9]+).*')" >> commit_info.env
+            proj_name=$(ls ${build_dir}/../ | grep "EWARM" | sed 's:/.*::')
+            echo "MY_PROJECT_NAME=${proj_name}" >> commit_info.env
+
+            # update submodules
+            git submodule update --init --recursive
+
+            # generate fake files to speed up tests if FAKE_BUILD is defined
+            if [ "${FAKE_BUILD}" == 'y' ] ; then
+              mkdir -p ${bin_dir}
+              echo "fake build" > ${build_dir}/build.log
+              cp ${default_bin_dir}/* -r ${bin_dir}/
+            else
+              pushd ${build_dir}
+              make > build.log 2>&1
+              popd
+            fi
+
+            # configure project according to defconfig
+            pushd ${dx_framework_dir}
+            src_dir=${PATH_PROJECT_ROOT}/sdk-ameba-v4.0d_gcc/project/realtek_ameba1_va0_example/${proj_name}
+            relative_src_dir=../../project/realtek_ameba1_va0_example/${proj_name}/src
+            config_file=<< parameters.defconfig >>
+
+            chmod +x configure.sh
+            chmod -R +x tools
+            # configure twice to prevent from some undesired circumstances
+            ./configure.sh -o ${relative_src_dir} -i ${relative_src_dir}/${config_file} --silent
+            ./configure.sh -o ${relative_src_dir} -i ${relative_src_dir}/${config_file} --silent
+            cp ${src_dir}/src/sdkconfig.h ${bin_dir}/${config_file}.h
+            popd
+
+            # prepare artifacts for the next stage
+            mkdir -p ${out_dir}/package
+            cp ${build_dir}/build.log ${PATH_PROJECT_ROOT}/
+            cp ${build_dir}/build.log ${out_dir}/
+            cp ${PATH_PROJECT_ROOT}/commit_info.env ${out_dir}/
+            cp ${release_dir}/* -r ${out_dir}/package
+            find ${release_dir} -name "A000.dat" | xargs -i cp {} ${out_dir}
+            cp ${bin_dir}/* -r ${out_dir}/
+      - store_artifacts:
+          path: << pipeline.parameters.project-root >>/build.log
+          destination: << pipeline.parameters.artifact-out >>/build.log
+          when: on_fail
+      - run:
+          name: build failed
+          command: circleci-agent step halt
+          when: on_fail
+      - persist_to_workspace:
+          root: << pipeline.parameters.project-root >>
+          paths:
+            - << parameters.out-dir >>
+      - store_artifacts:
+          path: << pipeline.parameters.project-root >>/<< parameters.out-dir >>/
+          destination: << pipeline.parameters.artifact-out >>/bin
+
+  gen_flash_bin:
+    working_directory: << pipeline.parameters.gen-flash-root-win >>
+    executor:
+      name: win/vs2019
+      shell: bash.exe
+    environment:
+      PATH_HOME: << pipeline.parameters.gen-flash-root >>
+      GIT_REPO: << pipeline.parameters.repo-gen-flash >>
+      PATH_TOOLS: << pipeline.parameters.common-tools >>
+    steps:
+      - unless:
+          condition: << pipeline.parameters.config-support-mp-tool >>
+          steps:
+            - run: echo 'NO_MP_OTA=y' >> $BASH_ENV
+      - attach_workspace:
+          at: temp
+      - run:
+          name: generate flah.bin
+          command: |
+
+            share_dir=$(realpath temp)
+            cd ${PATH_HOME}
+            cp ${share_dir}/flash_tool -r ./
+            cp ${share_dir}/utils/7z.exe ${share_dir}/utils/7z.dll -r flash_tool/
+            mkdir -p flash_bin/normal flash_bin/release
+
+            pushd flash_tool
+            cmd "/C 7z x JLink_V494.7z"
+            popd
+
+            # generate flash.bin in debug mode
+            cp ${share_dir}/normal/ram_all.bin flash_tool/
+            cp ${share_dir}/normal/A000.dat flash_tool/
+            if [[ "${NO_MP_OTA}" == 'y' ]] ; then
+              echo "no mp-tool image; use ota.bin"
+              cp ${share_dir}/normal/ota.bin flash_tool/mp_ota.bin
+            else
+              cp ${share_dir}/mp_tool/ota.bin flash_tool/mp_ota.bin
+            fi
+            pushd flash_tool
+            cmd "/C ImageTool.exe -generate dftimg=ram_all.bin otaimg=mp_ota.bin,offset=0xfb000 calimg=A000.dat outimg=flash.bin dftboot=otaimg"
+            cp flash.bin ${PATH_HOME}/flash_bin/normal/
+            popd
+
+            # generate flash.bin in release mode
+            cp ${share_dir}/release/ram_all.bin flash_tool/
+            cp ${share_dir}/release/A000.dat flash_tool/
+            if [[ "${NO_MP_OTA}" == 'y' ]] ; then
+              echo "no mp-tool image; use ota.bin"
+              cp ${share_dir}/release/ota.bin flash_tool/mp_ota.bin
+            else
+              cp ${share_dir}/mp_tool/ota.bin flash_tool/mp_ota.bin
+            fi
+            pushd flash_tool
+            cmd "/C ImageTool.exe -generate dftimg=ram_all.bin otaimg=mp_ota.bin,offset=0xfb000 calimg=A000.dat outimg=flash.bin dftboot=otaimg"
+            cp flash.bin ${PATH_HOME}/flash_bin/release/
+            popd
+
+      - run:
+          name: failed to generate flash image
+          command: circleci-agent step halt
+          when: on_fail
+      - persist_to_workspace:
+          root: << pipeline.parameters.gen-flash-root-win >>
+          paths:
+            - flash_bin
+      - store_artifacts:
+          path: << pipeline.parameters.gen-flash-root-win >>\\flash_bin
+          destination: << pipeline.parameters.artifact-out >>/flash_bin
+
+  gen_release_package:
+    working_directory: << pipeline.parameters.gen-package-root >>
+    docker:
+      - image: dexatek/dk-ameba1:1.3
+    environment:
+      PATH_GEN_PACKAGE_ROOT: << pipeline.parameters.gen-package-root >>
+    parameters:
+      odm-name:
+        type: string
+        default: SigmaCasa
+    steps:
+      - unless:
+          condition: << pipeline.parameters.config-support-mp-tool >>
+          steps:
+            - run: echo 'export NO_MP_OTA=y' >> $BASH_ENV
+      - attach_workspace:
+          at: temp
+      - run:
+          name: generate release package
+          command: |
+
+            share_dir=$(realpath ./temp)
+            odm_name=<< parameters.odm-name >>
+            source ${share_dir}/normal/commit_info.env
+            # no version tag; use default string
+            if [[ "${MY_COMMIT_TAG}x" == 'x' ]] ; then MY_COMMIT_TAG='informal' ; fi
+
+            production_image="PRODUCTION-${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}.bin"
+            ota_image="OTA-${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}.bin"
+            mp_ota_image="MP_OTA-${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}.bin"
+            ram_all_image="RAM_ALL-${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}.bin"
+            formal_package="${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}"
+            debug_package="${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}-debug"
+
+            # generate debug package
+            target=$(ls ${share_dir}/normal/package/ | grep "EWARM" | sed 's:/.*::')
+            cp ${share_dir}/normal/package/${target} -r ${debug_package}
+            path_intenal=$(find ${debug_package} -type d -iname "Formal_Release")
+            path_external=$(find ${debug_package} -type d -iname "Internal_Release")
+            path_soc=$(find ${debug_package} -type d -iname "RTK*")
+            mv ${share_dir}/flash_bin/normal/flash.bin ${path_soc}/${production_image}
+            mv ${share_dir}/normal/ota.bin ${path_external}/${ota_image}
+            mv ${share_dir}/normal/ram_all.bin ${path_intenal}/${ram_all_image}
+            if [[ ${NO_MP_OTA} != 'y' ]] ; then
+              cp ${share_dir}/mp_tool/bin/ota.bin ${path_intenal}/${mp_ota_image_name}
+            fi
+
+            # generate release package
+            target=$(ls ${share_dir}/release/package/ | grep "EWARM" | sed 's:/.*::')
+            cp ${share_dir}/release/package/${target} -r ${formal_package}
+            path_intenal=$(find ${formal_package} -type d -iname "Formal_Release")
+            path_external=$(find ${formal_package} -type d -iname "Internal_Release")
+            path_soc=$(find ${formal_package} -type d -iname "RTK*")
+            mv ${share_dir}/flash_bin/release/flash.bin ${path_soc}/${production_image}
+            mv ${share_dir}/release/ota.bin ${path_external}/${ota_image}
+            mv ${share_dir}/release/ram_all.bin ${path_intenal}/${ram_all_image}
+            if [[ ${NO_MP_OTA} != 'y' ]] ; then
+              cp ${share_dir}/mp_tool/bin/ota.bin ${path_intenal}/${mp_ota_image_name}
+            fi
+
+            # prepare artifacts
+            apt-get update
+            apt-get install -y zip unzip
+            zip -9 -r ${debug_package}.zip ${debug_package}
+            zip -9 -r ${formal_package}.zip ${formal_package}
+            mkdir out
+            mv ${debug_package}.zip ${formal_package}.zip out/
+
+      - run:
+          name: failed to generate release package
+          command: circleci-agent step halt
+          when: on_fail
+
+      - store_artifacts:
+          path: << pipeline.parameters.gen-package-root >>/out
+          destination: << pipeline.parameters.artifact-out >>
+
+workflows:
+  version: 2.1
+  release_sigmacasa:
+    jobs:
+      - prepare_cross_platform_tools:
+          name: prepare_tools
+      - build:
+          name: build_normal
+          out-dir: normal
+          build-mp-tool: false
+          release-build: false
+          defconfig: sdkconfig.sigmacasa
+          filters:
+            tags:
+              only: test
+      - build:
+          name: build_release
+          out-dir: release
+          build-mp-tool: false
+          release-build: true
+          defconfig: sdkconfig.sigmacasa
+          filters:
+            tags:
+              only: test
+      - build:
+          name: build_mp_tool
+          out-dir: mp_tool
+          build-mp-tool: true
+          release-build: true
+          defconfig: sdkconfig.sigmacasa
+          filters:
+            tags:
+              only: test
+      - gen_flash_bin:
+          name: gen_flash
+          requires:
+            - prepare_tools
+            - build_normal
+            - build_release
+            - build_mp_tool
+          filters:
+            tags:
+              only: /.*/
+      - gen_release_package:
+          name: gen_package
+          odm-name: SigmaCasa
+          requires:
+            - gen_flash
+          filters:
+            tags:
+              only: /.*/
+  release_resideo_china:
+    jobs:
+      - prepare_cross_platform_tools:
+          name: prepare_tools
+      - build:
+          name: build_normal
+          out-dir: normal
+          build-mp-tool: false
+          release-build: false
+          defconfig: sdkconfig.resideo.china
+          filters:
+            tags:
+              only: test
+      - build:
+          name: build_release
+          out-dir: release
+          build-mp-tool: false
+          release-build: true
+          defconfig: sdkconfig.resideo.china
+          filters:
+            tags:
+              only: test
+      - build:
+          name: build_mp_tool
+          out-dir: mp_tool
+          build-mp-tool: true
+          release-build: true
+          defconfig: sdkconfig.resideo.china
+          filters:
+            tags:
+              only: test
+      - gen_flash_bin:
+          name: gen_flash
+          requires:
+            - prepare_tools
+            - build_normal
+            - build_release
+            - build_mp_tool
+          filters:
+            tags:
+              only: /.*/
+      - gen_release_package:
+          name: gen_package
+          odm-name: Resideo
+          requires:
+            - gen_flash
+          filters:
+            tags:
+              only: /.*/
+  release_resideo_india:
+    jobs:
+      - prepare_cross_platform_tools:
+          name: prepare_tools
+      - build:
+          name: build_normal
+          out-dir: normal
+          build-mp-tool: false
+          release-build: false
+          defconfig: sdkconfig.resideo.india
+          filters:
+            tags:
+              only: test
+      - build:
+          name: build_release
+          out-dir: release
+          build-mp-tool: false
+          release-build: true
+          defconfig: sdkconfig.resideo.india
+          filters:
+            tags:
+              only: test
+      - build:
+          name: build_mp_tool
+          out-dir: mp_tool
+          build-mp-tool: true
+          release-build: true
+          defconfig: sdkconfig.resideo.india
+          filters:
+            tags:
+              only: test
+      - gen_flash_bin:
+          name: gen_flash
+          requires:
+            - prepare_tools
+            - build_normal
+            - build_release
+            - build_mp_tool
+          filters:
+            tags:
+              only: /.*/
+      - gen_release_package:
+          name: gen_package
+          odm-name: ResideoIndia
+          requires:
+            - gen_flash
+          filters:
+            tags:
+              only: /.*/

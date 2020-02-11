@@ -1,0 +1,187 @@
+menu "Project"
+
+config PROJECT_FW_VERSION
+    string "Project Firmware Version"
+    default "3.0.00"
+
+config UART_LOG_BAUD
+    int "UART Log Baud Rate"
+    default 38400
+
+comment "Wi-Fi channel/adaptivity"
+
+config USE_WIFI_EXTENSION_API
+    bool "Use WiFi extension API"
+    default y
+
+config ANONYMOUS_LOGIN_TOKEN
+    string "Anonymous Login Token"
+    default ""
+
+config ANONYMOUS_LOGIN_TOKEN_TIMEOUT
+    int "Anonymous Login Timeout"
+    default 1800
+
+comment "Hybrid Device Configuration"
+
+config DEVICE_IS_HYBRID
+    bool "Enable hybrid device support"
+    default n
+    help
+        Enable hybrid device support
+
+config HP_TAKEOVER_SUPPORT
+    bool "Enable HP Take Over"
+    default n
+    help
+        Enable HP take over support
+
+config HYBRID_PERIPHERAL_PRODUCT_ID
+    depends on DEVICE_IS_HYBRID
+    hex "Hybrid Peripheral Product ID"
+    default 0x98
+    help
+        refer to dk_Peripheral.h
+
+config DK_SERVER_APP_ID
+    string "Product APP ID"
+    default "ODM-SIGMACASA-HUBRTK-0ba4f32555214"
+
+config DK_SERVER_API_KEY
+    string "Product APP KEY"
+    default "ce8f2bd73b478e816a49fe68979089d"
+
+config HP_BLE_DEVICE_KEEPERLIST_AUTO_UPDATE
+    depends on DEVICE_IS_HYBRID
+    bool "HP BLE Device Keeper List Auto Update"
+    default n
+    help
+        BLE device keeper list sends to HP if device amount changed
+
+config HP_BLE_DEVICE_PERIPHERAL_INFO_AUTO_UPDATE
+    depends on DEVICE_IS_HYBRID
+    bool "HP BLE Device Peripheral Info Auto Update"
+    default n
+    help
+        BLE device PeripheralInfo sends to HP if BLE data or peripheral status changed
+
+config GENERATE_SECURITY_KEY
+    depends on DEVICE_IS_HYBRID
+    bool "Generate Security Key"
+    default n
+    help
+        BLE device PeripheralInfo sends to HP if BLE data or peripheral status changed
+
+config SECURITY_KEY_RANDOMIZE
+    depends on GENERATE_SECURITY_KEY
+    int "Security Key Randomize"
+    default 1
+    help
+        Generate Security Key using Random Number
+
+config DATETIME_FORMAT_EU
+    depends on DEVICE_IS_HYBRID
+    bool "Using EU Datetime Format"
+    default n
+    help
+        System DATETIME uses EU foramt: DD-MM-YYYY HH:MM
+
+comment "Central Device Configuration"
+
+config WIFI_FAIL_COUNT_BEFORE_REBOOT
+    int "WiFi fail count before reboot"
+    default 10
+    help
+        a value of 0 would not cause the the system to to reboot
+
+config FW_AUTO_UPDATE_UPON_AVAILABLE
+    bool "FW auto update upon available"
+    default y
+    help
+        1 - Auto update
+        0 - Manual Update via panel
+
+config FW_AUTO_UPDATE_AFTER_REGISTER
+    int "FW auto update after register (sec)"
+    default 0
+
+config WIFI_INFO_RETENTION_SUPPORT
+    bool "WiFi keep is enabled"
+    default 0
+
+
+comment "Server Configuration"
+
+config DK_SERVER_DNS_NAME
+    string "server DNS name"
+    default "sigmacasa.dexatekwebservice.net"
+    help
+        server DNS name
+
+config DK_SERVER_API_VERSION
+    string "server API version"
+    default "/3.6"
+    help
+        server API version
+
+config DK_QA_SERVER_DNS_NAME
+    string "QA server DNS name"
+    default "sigmacasaqaserver.dexatekwebservice.net"
+    help
+        QA server DNS name
+
+config DK_QA_SERVER_API_VERSION
+    string "QA server API version"
+    default "/3.6"
+    help
+        old version - /SHSVR-236
+
+config MQTT_HOST_NAME
+    string "MQTT DNS name"
+    default "mqtt.dexatekwebservice.net"
+    help
+        MQTT DNS name
+
+config MQTT_PORT
+    int "MQTT Port"
+    default 8883
+    help
+        MQTT Port
+
+config MQTT_QA_HOST_NAME
+    string "MQTT QA DNS name"
+    default "mqttqa.dexatekwebservice.net"
+    help
+        MQTT QA DNS name
+
+config MQTT_QA_PORT
+    int "MQTT QA Port"
+    default 8883
+    help
+        MQTT QA Port
+
+comment "FW Download"
+
+config FW_DOWNLOAD_SIZE_PER_CHUNK
+    int "FW download size per chunk"
+    default 3072
+    help
+        default: 1024 * 3
+
+comment "HW Support"
+
+config HW_RTC_SUPPORT
+    bool "HW RTC Support"
+    default 0
+    help
+        supports PERICOM 4337 by default
+
+comment "Alarm Support"
+
+config ALARM_HAS_PANEL
+    bool "Alarm Has Panel"
+    default 0
+    help
+        Alarm System with Panel
+
+endmenu

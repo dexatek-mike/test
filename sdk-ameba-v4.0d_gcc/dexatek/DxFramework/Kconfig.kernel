@@ -1,0 +1,51 @@
+menu "Kernel"
+
+source "$PATH_MENU_ROOT/DxOS/Kconfig"
+
+source "$PATH_MENU_ROOT/DxBSP/Kconfig"
+
+if !PLAT_UNKNOWN
+
+source "$PATH_MENU_ROOT/DxSysDebugger/Kconfig"
+
+source "$PATH_MENU_ROOT/SHSCommonSubModule/Kconfig"
+
+source "$PATH_MENU_ROOT/DxDeviceInfoManager/Kconfig"
+
+source "$PATH_MENU_ROOT/kernel/container/Kconfig"
+
+source "$PATH_MENU_ROOT/kernel/memory/Kconfig"
+
+source "$PATH_MENU_ROOT/kernel/storage/Kconfig"
+
+source "$PATH_MENU_ROOT/MainStateMachine/Kconfig"
+
+source "$PATH_MENU_ROOT/JobManager/Kconfig"
+
+source "$PATH_MENU_ROOT/ServerManager/Kconfig"
+
+source "$PATH_MENU_ROOT/Utils/Kconfig"
+
+source "$PATH_MENU_ROOT/CommandLineInterface/Kconfig"
+
+source "$PATH_MENU_ROOT/HybridPeripheralManager/Kconfig"
+
+source "$PATH_MENU_ROOT/DxKeypadManager/Kconfig"
+
+source "$PATH_MENU_ROOT/LEDManager/Kconfig"
+
+source "$PATH_MENU_ROOT/MqttManager/Kconfig"
+
+source "$PATH_MENU_ROOT/OfflineSupport/Kconfig"
+
+source "$PATH_MENU_ROOT/ThirdPartyStack/Kconfig"
+
+source "$PATH_MENU_ROOT/UdpCommManager/Kconfig"
+
+source "$PATH_MENU_ROOT/WifiCommManager/Kconfig"
+
+source "$PATH_MENU_ROOT/tests/Kconfig"
+
+endif
+
+endmenu

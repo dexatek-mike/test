@@ -1,0 +1,11 @@
+menuconfig DX_CONTAINER_MANAGER_SUPPORT
+    bool "Container Manager"
+    default y
+
+if DX_CONTAINER_MANAGER_SUPPORT
+
+config MAX_NUMBER_OF_CONTAINER_GROUPS
+    hex "MAX Number of Container Groups"
+    default 10
+
+endif

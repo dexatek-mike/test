@@ -1,0 +1,14 @@
+menuconfig DX_OFFLINE_SUPPORT
+    bool "Offline Support"
+    default y
+
+if DX_OFFLINE_SUPPORT
+
+comment "<empty>"
+
+config STANDBY_IF_NO_LOGIN_INFO
+    bool "enter standby mode if no login info"
+    default n
+
+endif
+

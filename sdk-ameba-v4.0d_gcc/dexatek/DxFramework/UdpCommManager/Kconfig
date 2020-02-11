@@ -1,0 +1,38 @@
+menuconfig DX_UDP_MANAGER_SUPPORT
+    bool "UDP Manager"
+    default y
+
+if DX_UDP_MANAGER_SUPPORT
+
+config UDP_MANAGER_TX_WK_STACK_SIZE
+    int "Stack Size - UDP Manager TX Worker"
+    default 1024 if PLAT_AMEBA_RTL8195AM
+    default 2048 if PLAT_ESP32_S0WD
+    default 1024 if PLAT_RTS390X
+    default 1024
+
+config UDP_MANAGER_TX_WK_QUEUE_SIZE
+    int "Queue Size - UDP Manager TX Workqueue"
+    default 20 if PLAT_AMEBA_RTL8195AM
+    default 10 if PLAT_RTS390X
+    default 20
+
+config UDP_MANAGER_RX_STACK_SIZE
+    int "Stack Size - UDP Manager RX Worker"
+    default 1024 if PLAT_AMEBA_RTL8195AM
+    default 2048 if PLAT_ESP32_S0WD
+    default 1024 if PLAT_RTS390X
+    default 1024
+
+config UDP_MANAGER_CTRL_WK_STACK_SIZE
+    int "Stack Size - UDP Manager Ctrl Worker"
+    default 512 if PLAT_AMEBA_RTL8195AM
+    default 2048 if PLAT_ESP32_S0WD
+    default 512 if PLAT_RTS390X
+    default 512
+
+config UDP_MANAGER_CTRL_WK_QUEUE_DEPT
+    int "Queue Size - UDP Manager Ctrl Workqueue"
+    default 10
+
+endif

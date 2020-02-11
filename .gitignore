@@ -1,0 +1,52 @@
+# Object files
+*.o
+*.ko
+*.obj
+*.elf
+*.pbd
+*.pbi.cout
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Libraries
+*.lib
+*.la
+*.lo
+
+# Shared objects (inc. Windows DLLs)
+*.so
+*.so.*
+*.dylib
+
+# Executables
+*.app
+*.i*86
+*.x86_64
+*.d51
+*.sim
+
+# Debug files
+*.map
+*.r51
+*.pbi
+*.orig
+*.cspy.bat
+*.crun
+*.dep
+*.dbgdt
+*.dni
+*.ewt
+*.jlink
+*.tmp
+*.wsdt
+*.wspos
+*.dSYM/
+Debug/
+build_info.h
+tmp.board
+src/Main_Application_BACKUP_1859.c
+src/Main_Application_BASE_1859.c
+src/Main_Application_LOCAL_1859.c
+src/Main_Application_REMOTE_1859.c

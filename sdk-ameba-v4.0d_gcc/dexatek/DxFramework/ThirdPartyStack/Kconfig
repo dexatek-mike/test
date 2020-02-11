@@ -1,0 +1,16 @@
+menuconfig DX_THIRD_PARTY_SUPPORT
+    bool "Third Party"
+    default y
+
+if DX_THIRD_PARTY_SUPPORT
+
+comment "FastLZ Config"
+
+config FASTLZ_BLOCK_SIZE
+    int "The block size of FastLZ"
+    range 1024 4096
+    default 1024
+    help
+        The block size of FastLZ
+
+endif

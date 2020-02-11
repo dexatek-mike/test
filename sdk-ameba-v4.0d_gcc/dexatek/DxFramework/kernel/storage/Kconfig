@@ -1,0 +1,9 @@
+menu "Storage Manager"
+
+config DX_STORAGE_MANAGER_SUPPORT
+    bool "Enable Dexatek Storage Manager Support"
+    default n
+    help
+        Enable Dexatek Storage Manager Support
+
+endmenu

@@ -1,0 +1,7 @@
+menu "Drivers"
+
+source "$PATH_MENU_ROOT/drivers/ble/Kconfig"
+
+source "$PATH_MENU_ROOT/drivers/zigbee/Kconfig"
+
+endmenu

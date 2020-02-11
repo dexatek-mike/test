@@ -1,0 +1,135 @@
+menu "Dexatek Flash Layout"
+
+choice
+prompt "Flash Size"
+default DX_FLASH_SIZE_32MBIT
+
+config DX_FLASH_SIZE_32MBIT
+    bool "Flash Size - 32MBit"
+endchoice
+
+config DX_FLASH_SIZE
+    int
+    default 4096 if DX_FLASH_SIZE_32MBIT
+
+config DX_FLASH_SIZE_TOTAL_MBITS
+    int
+    default 32 if DX_FLASH_SIZE_32MBIT
+
+config DEFAULT_FLASH_SECTOR_ERASE_SIZE
+    int "Flash Sector Erase Size"
+    default 4096
+
+comment "contiguous data region 1"
+comment "system data backup"
+comment "system data"
+comment "calibration data"
+
+config BACKUP_SECTOR
+    hex "Flash Region 1 Start Address"
+    default 0x01D000
+
+config SYSTEM_DATA_SIZE
+    hex "Partition Size - System Data"
+    default 0x1000
+    help
+        default: 4KB
+
+config CAL_DATA_SIZE
+    hex "Partition Size - Calibration Data"
+    default 0x1000
+    help
+        default: 4KB
+
+comment "contiguous data region 2: firmware image 1"
+
+config FIRMWARE_IMAGE_1_ADDR
+    hex "Flash Region 2 Start Address"
+    default 0x020000
+
+comment "contiguous data region 3: firmware image 2"
+comment "define DX_SYSINFO_FLASH_UPDATE_IMG_START_ADDR FIRMWARE_IMAGE_2_ARRD"
+
+config FIRMWARE_IMAGE_2_ADDR
+    hex "Flash Region 3 Start Address"
+    default 0x120000
+
+comment "contiguous data region 4"
+comment "sub image"
+comment "hp storage"
+
+config DX_SUBIMG_FLASH_ADDR1
+    hex "Flash Region 4 Start Address"
+    default 0x220000
+
+config DX_SUBIMG_FLASH_SIZE
+    hex "Partition Size - Subimage"
+    default 0x100000
+    help
+        default: 1 MB
+
+config DX_HP_STORAGE_SIZE
+    hex "Partition Size - HP Storage"
+    default 0x80000
+    help
+        default: 512 KB
+
+comment "contiguous data region 5"
+comment "coredump"
+
+config ESP32_COREDUMP_ADDR
+    hex "Flash Region 5 Start Address"
+    default 0x3DF000
+
+config ESP32_COREDUMP_SIZE
+    hex "Partition Size - Coredump"
+    default 0x10000
+    help
+        default: 64 KB
+
+comment "contiguous data region 6"
+comment "device info 1"
+comment "device info 2"
+comment "system info 1"
+comment "system info 2"
+
+config DX_DEVINFO_FLASH_ADDR1
+    hex "Flash Region 6 Start Address"
+    default 0x3EF000
+
+config DX_DEVINFO_FLASH_SIZE
+    hex "Partition Size - Device Info"
+    default 0x4000
+    help
+        default: 16 KB
+
+config DX_SYSINFO_FLASH_SIZE
+    hex "Partition Size - System Info"
+    default 0x4000
+    help
+        default: 16 KB
+
+comment "contiguous data region 7: Homekit"
+
+config DX_HOMEKIT_SETTING_DATA_ADDR
+    hex "Flash Region 7 Start Address"
+    default 0x3FF000
+
+config DX_HK_SETUP_CODE_SIZE
+    int "Partition Size - Homekit Setup Code"
+    default 32
+
+config DX_HK_RESERVED_0_SIZE
+    int "Partition Size - Homekit Reserved 0"
+    default 224
+
+config DX_HK_WAC_CONFIG_SIZE
+    int "Partition Size - Homekit WAC Config"
+    default 140
+
+config DX_HK_KEYPAIR_SIZE
+    int "Partition Size - Homekit Key Pair"
+    default 68
+
+endmenu
+

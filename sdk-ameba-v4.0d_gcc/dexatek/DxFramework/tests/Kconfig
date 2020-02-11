@@ -1,0 +1,12 @@
+menuconfig DX_UNIT_TEST
+    bool "Unit Test"
+    default n
+
+if DX_UNIT_TEST
+
+config DX_UNIT_TEST_OBJECT_DICTIONARY
+    bool "Unit Test: Object Dictionary"
+    default y
+
+endif
+

@@ -1,0 +1,15 @@
+menu "OS"
+
+comment "Platform Configurations (!!! MUST Check !!!)"
+
+config SCAN_RESULT_WORKER_THREAD_STACK_SIZE
+    depends on PLAT_RTS390X
+    int "Queue Size - BLE Device Control Worker"
+    default 1024
+
+config SCAN_RESULT_WORKER_THREAD_MAX_EVENT_QUEUE
+    depends on PLAT_RTS390X
+    int "Queue Size - BLE Device Control Worker"
+    default 2
+
+endmenu

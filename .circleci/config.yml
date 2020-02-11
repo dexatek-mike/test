@@ -15,9 +15,6 @@ parameters:
   gen-flash-root-win:
     type: string
     default: "C:\\Users\\circleci"
-  subdir-gen-flash-repo:
-    type: string
-    default: "gen_flash"
   repo-gen-flash:
     type: string
     default: "https://github.com/dexatek-mike/ci-win.git"
@@ -136,6 +133,10 @@ jobs:
           root: << pipeline.parameters.project-root >>
           paths:
             - << parameters.out-dir >>
+      - persist_to_workspace:
+          root: << pipeline.parameters.common-tools >>
+          paths:
+            - flash_tool
       - store_artifacts:
           path: << pipeline.parameters.project-root >>/<< parameters.out-dir >>/
           destination: << pipeline.parameters.artifact-out >>/bin
@@ -146,7 +147,6 @@ jobs:
       shell: bash.exe
     environment:
       PATH_HOME: << pipeline.parameters.gen-flash-root >>
-      DIR_REPO: << pipeline.parameters.subdir-gen-flash-repo >>
       GIT_REPO: << pipeline.parameters.repo-gen-flash >>
       PATH_TOOLS: << pipeline.parameters.common-tools >>
     steps:
@@ -159,43 +159,57 @@ jobs:
       - run:
           name: generate flah.bin
           command: |
-            share_dir=$(realpath temp)
 
+            share_dir=$(realpath temp)
             cd ${PATH_HOME}
-            git clone ${GIT_REPO} ${DIR_REPO}
-            cd ${DIR_REPO}
+            cp ${share_dir}/flash_tool flash_tool -r
+            #cp ${share_dir}/utils/7z.exe ${share_dir}/utils/7z.dll -r flash_tool
+            git clone ${GIT_REPO} gen_flash
+            cp gen_flash/utils/7z.exe gen_flash/utils/7z.dll -r flash_tool/
             mkdir -p flash_bin/normal flash_bin/release
 
-            cp ${share_dir}/normal/* ./ -r
-            if [[ "${NO_MP_OTA}" == 'y' ]] ; then
-              echo "no mp-tool image; use ota.bin"
-              cp ota.bin mp_ota.bin
-            else
-              cp ${share_dir}/mp_tool/ota.bin mp_ota.bin
-            fi
-            sh gen_flash_bin.sh
-            cp flash.bin flash_bin/normal/
+            pushd flash_tool
+            cmd "/C 7z x JLink_V494.7z"
+            popd
 
-            cp ${share_dir}/release/* ./ -r
+            # generate flash.bin in debug mode
+            cp ${share_dir}/normal/ram_all.bin flash_tool/
+            cp ${share_dir}/normal/A000.dat flash_tool/
             if [[ "${NO_MP_OTA}" == 'y' ]] ; then
-              cp ota.bin mp_ota.bin
-            else
               echo "no mp-tool image; use ota.bin"
-              cp ${share_dir}/mp_tool/ota.bin mp_ota.bin
+              cp ${share_dir}/normal/ota.bin flash_tool/mp_ota.bin
+            else
+              cp ${share_dir}/mp_tool/ota.bin flash_tool/mp_ota.bin
             fi
-            sh gen_flash_bin.sh
-            cp flash.bin flash_bin/release/
+            pushd flash_tool
+            ImageTool.exe -generate dftimg=ram_all.bin otaimg=mp_ota.bin,offset=0xfb000 calimg=A000.dat outimg=flash.bin dftboot=otaimg
+            cp flash.bin ${PATH_HOME}/flash_bin/normal/
+            popd
+
+            # generate flash.bin in release mode
+            cp ${share_dir}/release/ram_all.bin flash_tool/
+            cp ${share_dir}/release/A000.dat flash_tool/
+            if [[ "${NO_MP_OTA}" == 'y' ]] ; then
+              echo "no mp-tool image; use ota.bin"
+              cp ${share_dir}/release/ota.bin flash_tool/mp_ota.bin
+            else
+              cp ${share_dir}/mp_tool/ota.bin flash_tool/mp_ota.bin
+            fi
+            pushd flash_tool
+            ImageTool.exe -generate dftimg=ram_all.bin otaimg=mp_ota.bin,offset=0xfb000 calimg=A000.dat outimg=flash.bin dftboot=otaimg
+            cp flash.bin ${PATH_HOME}/flash_bin/release/
+            popd
 
       - run:
           name: failed to generate flash image
           command: circleci-agent step halt
           when: on_fail
       - persist_to_workspace:
-          root: << pipeline.parameters.gen-flash-root-win >>\\<< pipeline.parameters.subdir-gen-flash-repo >>
+          root: << pipeline.parameters.gen-flash-root-win >>
           paths:
             - flash_bin
       - store_artifacts:
-          path: << pipeline.parameters.gen-flash-root-win >>\\<< pipeline.parameters.subdir-gen-flash-repo >>\\flash_bin
+          path: << pipeline.parameters.gen-flash-root-win >>\\flash_bin
           destination: << pipeline.parameters.artifact-out >>/flash_bin
   gen_release_package:
     working_directory: << pipeline.parameters.gen-package-root >>
@@ -228,6 +242,7 @@ jobs:
             formal_package="${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}"
             debug_package="${MY_PROJECT_NAME}-${odm_name}-${MY_COMMIT_TAG}-${MY_COMMIT_HASH}-debug"
 
+            # generate debug package
             target=$(ls ${share_dir}/normal/package/ | grep "EWARM" | sed 's:/.*::')
             mv ${share_dir}/normal/package/${target} ${debug_package}
             path_intenal=$(find ${debug_package} -type d -iname "Formal_Release")
@@ -240,6 +255,7 @@ jobs:
               cp ${share_dir}/mp_tool/bin/ota.bin ${path_intenal}/${mp_ota_image_name}
             fi
 
+            # generate release package
             target=$(ls ${share_dir}/release/package/ | grep "EWARM" | sed 's:/.*::')
             mv ${share_dir}/release/package/${target} ${formal_package}
             path_intenal=$(find ${formal_package} -type d -iname "Formal_Release")
@@ -252,6 +268,7 @@ jobs:
               cp ${share_dir}/mp_tool/bin/ota.bin ${path_intenal}/${mp_ota_image_name}
             fi
 
+            # prepare artifacts
             tar zcvf ${debug_package}.tar.gz ${debug_package}
             tar zcvf ${formal_package}.tar.gz ${formal_package}
             mkdir out

@@ -1,5 +1,8 @@
 version: 2.1
 parameters:
+  project-home:
+    type: string
+    default: "/home/dev"
   project-root:
     type: string
     default: "/home/dev/app-project"
@@ -40,6 +43,19 @@ jobs:
     docker:
       - image: dexatek/dk-ameba1:1.3
     steps:
+      - checkout
+      - run:
+          name: save repository to cache
+          command: |
+
+            # update submodules
+            git submodule update --init --recursive
+
+      - persist_to_workspace:
+          root: << pipeline.parameters.project-home >>
+          paths:
+            - app-project
+
       - persist_to_workspace:
           root: << pipeline.parameters.common-tools >>
           paths:
@@ -47,7 +63,7 @@ jobs:
             - utils
 
   build:
-    working_directory: << pipeline.parameters.project-root >>
+    working_directory: << pipeline.parameters.project-home >>
     docker:
       - image: dexatek/dk-ameba1:1.3
     environment:
@@ -87,13 +103,19 @@ jobs:
                 command: circleci-agent step halt
                 unless: << pipeline.parameters.config-support-mp-tool >>
             - run: echo 'export BUILD_MP_TOOL=y' >> $BASH_ENV
-      - checkout
       # need premium plan
       #- setup_remote_docker: 
       #    docker_layer_caching: true
+      - attach_workspace:
+          at: temp
       - run:
           name: Make (build project)
           command: |
+
+            # copy project repo
+            proj_dir_name=$(basename $(realpath ${PATH_PROJECT_ROOT}))
+            cp temp/${proj_dir_name} -r ./
+            cd ${proj_dir_name}
 
             # set path variables
             out_dir=${PATH_PROJECT_ROOT}/<< parameters.out-dir >>
@@ -114,7 +136,7 @@ jobs:
             echo "MY_PROJECT_NAME=${proj_name}" >> commit_info.env
 
             # update submodules
-            git submodule update --init --recursive
+            #git submodule update --init --recursive
 
             # generate fake files to speed up tests if FAKE_BUILD is defined
             if [ "${FAKE_BUILD}" == 'y' ] ; then
@@ -324,6 +346,8 @@ workflows:
           build-mp-tool: false
           release-build: false
           defconfig: sdkconfig.sigmacasa
+          requires:
+            - prepare_tools
           filters:
             tags:
               only: test
@@ -333,6 +357,8 @@ workflows:
           build-mp-tool: false
           release-build: true
           defconfig: sdkconfig.sigmacasa
+          requires:
+            - prepare_tools
           filters:
             tags:
               only: test
@@ -342,13 +368,14 @@ workflows:
           build-mp-tool: true
           release-build: true
           defconfig: sdkconfig.sigmacasa
+          requires:
+            - prepare_tools
           filters:
             tags:
               only: test
       - gen_flash_bin:
           name: gen_flash
           requires:
-            - prepare_tools
             - build_normal
             - build_release
             - build_mp_tool
@@ -373,6 +400,8 @@ workflows:
           build-mp-tool: false
           release-build: false
           defconfig: sdkconfig.resideo.china
+          requires:
+            - prepare_tools
           filters:
             tags:
               only: test
@@ -382,6 +411,8 @@ workflows:
           build-mp-tool: false
           release-build: true
           defconfig: sdkconfig.resideo.china
+          requires:
+            - prepare_tools
           filters:
             tags:
               only: test
@@ -391,13 +422,14 @@ workflows:
           build-mp-tool: true
           release-build: true
           defconfig: sdkconfig.resideo.china
+          requires:
+            - prepare_tools
           filters:
             tags:
               only: test
       - gen_flash_bin:
           name: gen_flash
           requires:
-            - prepare_tools
             - build_normal
             - build_release
             - build_mp_tool
@@ -422,6 +454,8 @@ workflows:
           build-mp-tool: false
           release-build: false
           defconfig: sdkconfig.resideo.india
+          requires:
+            - prepare_tools
           filters:
             tags:
               only: test
@@ -431,6 +465,8 @@ workflows:
           build-mp-tool: false
           release-build: true
           defconfig: sdkconfig.resideo.india
+          requires:
+            - prepare_tools
           filters:
             tags:
               only: test
@@ -440,13 +476,14 @@ workflows:
           build-mp-tool: true
           release-build: true
           defconfig: sdkconfig.resideo.india
+          requires:
+            - prepare_tools
           filters:
             tags:
               only: test
       - gen_flash_bin:
           name: gen_flash
           requires:
-            - prepare_tools
             - build_normal
             - build_release
             - build_mp_tool
